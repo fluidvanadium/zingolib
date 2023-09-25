@@ -1,0 +1,2 @@
+Run cargo nextest archive --verbose --workspace --all-features --archive-file nextest-archive.tar.zst
+Error: An error occurred trying to start process '/usr/local/bin/bash' with working directory '/Users/runner/work/zingolib/zingolib/./rust'. No such file or directory
