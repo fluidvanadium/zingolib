@@ -5,7 +5,7 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::process::Child;
 pub fn get_cargo_manifest_dir() -> PathBuf {
-    PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").expect("To be inside a manifested space."))
+    PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap_or("zingocli".to_string()))
 }
 
 pub fn get_regtest_dir() -> PathBuf {

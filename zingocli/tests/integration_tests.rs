@@ -3473,3 +3473,48 @@ mod slow {
         assert_eq!(witness_before.unwrap(), witness_after.unwrap());
     }
 }
+
+#[tokio::test]
+/// THe bug: shield from sapling causing zingo-mobile balance errors when app repeatedly closed and reopened
+///
+/// First thing to test: Shield from sapling, load and restore with shield still in mempool
+async fn tbd() {
+    let (ref regtest_manager, _cph, ref faucet, ref recipient) =
+        scenarios::faucet_recipient_default().await;
+    zingo_testutils::send_value_between_clients_and_sync(
+        regtest_manager,
+        faucet,
+        recipient,
+        100_000,
+        "sapling",
+    )
+    .await
+    .unwrap();
+    let pre_shield_balance = recipient.do_balance().await;
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&pre_shield_balance).unwrap()
+    );
+    recipient.do_shield(&[Pool::Sapling], None).await.unwrap();
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&recipient.do_balance().await).unwrap()
+    );
+    let saved_recipient = recipient.do_save_to_buffer().await.unwrap();
+    let loaded_recipient =
+        LightClient::read_wallet_from_buffer_async(recipient.config(), &*saved_recipient)
+            .await
+            .unwrap();
+    assert_eq!(pre_shield_balance, loaded_recipient.do_balance().await);
+    println!(
+        "{}",
+        JsonValue::from(loaded_recipient.do_list_txsummaries().await).pretty(2)
+    );
+    zingo_testutils::increase_height_and_wait_for_client(regtest_manager, &loaded_recipient, 1)
+        .await
+        .unwrap();
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&loaded_recipient.do_balance().await).unwrap()
+    );
+}
