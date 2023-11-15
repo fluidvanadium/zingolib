@@ -85,35 +85,35 @@ impl ConfirmationStatus {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum SpendConfirmationStatus {
+pub enum SpendStatus {
     // A note can only be spent once.  Maybe this would be a reasonable place to reuse the
     // "Local" nym?   I guess that if the client in question is not the only client
     // with a spend capability for the note, then the might be actually spent, and the
     // client is unaware..  but this is *only* possible if the spender is non-Local..  right?!
-    NoKnownSpends,
-    PendingSpend(TxId),
-    ConfirmedSpent(TxId, BlockHeight),
+    NoKnown,
+    Pending(TxId),
+    Confirmed(TxId, BlockHeight),
 }
 
-impl SpendConfirmationStatus {
+impl SpendStatus {
     pub fn from_txid_and_confirmation(
         spending_txid: TxId,
         confirmation_status: ConfirmationStatus,
     ) -> Self {
         match confirmation_status {
             ConfirmationStatus::Local | ConfirmationStatus::InMempool(_) => {
-                Self::PendingSpend(spending_txid)
+                Self::Pending(spending_txid)
             }
             ConfirmationStatus::ConfirmedOnChain(confirmation_height) => {
-                Self::ConfirmedSpent(spending_txid, confirmation_height)
+                Self::Confirmed(spending_txid, confirmation_height)
             }
         }
     }
     pub fn from_opt_txidandu32(option_txidandu32: Option<(TxId, u32)>) -> Self {
         match option_txidandu32 {
-            None => Self::NoKnownSpends,
+            None => Self::NoKnown,
             Some((txid, confirmed_height)) => {
-                Self::ConfirmedSpent(txid, BlockHeight::from_u32(confirmed_height))
+                Self::Confirmed(txid, BlockHeight::from_u32(confirmed_height))
             }
         }
     }
@@ -122,42 +122,42 @@ impl SpendConfirmationStatus {
         option_txid: Option<TxId>,
     ) -> Self {
         match option_txid {
-            None => Self::NoKnownSpends,
+            None => Self::NoKnown,
             Some(txid) => match option_height {
-                None => Self::PendingSpend(txid),
+                None => Self::Pending(txid),
                 Some(integer) => match u32::try_from(integer) {
-                    Err(_) => Self::PendingSpend(txid),
-                    Ok(height) => Self::ConfirmedSpent(txid, BlockHeight::from_u32(height)),
+                    Err(_) => Self::Pending(txid),
+                    Ok(height) => Self::Confirmed(txid, BlockHeight::from_u32(height)),
                 },
             },
         }
     }
     pub fn is_unspent(&self) -> bool {
-        matches!(self, Self::NoKnownSpends)
+        matches!(self, Self::NoKnown)
     }
     pub fn is_pending_spend(&self) -> bool {
-        matches!(self, Self::PendingSpend(_))
+        matches!(self, Self::Pending(_))
     }
     pub fn is_pending_spend_or_confirmed_spent(&self) -> bool {
-        matches!(self, Self::PendingSpend(_) | Self::ConfirmedSpent(_, _))
+        matches!(self, Self::Pending(_) | Self::Confirmed(_, _))
     }
     pub fn is_confirmed_spent(&self) -> bool {
-        matches!(self, Self::ConfirmedSpent(_, _))
+        matches!(self, Self::Confirmed(_, _))
     }
     pub fn is_not_confirmed_spent(&self) -> bool {
-        !matches!(self, Self::ConfirmedSpent(_, _))
+        !matches!(self, Self::Confirmed(_, _))
     }
     pub fn erase_spent_in_txids(&mut self, txids: &[TxId]) {
         match self {
-            Self::NoKnownSpends => (),
-            Self::PendingSpend(txid) => {
+            Self::NoKnown => (),
+            Self::Pending(txid) => {
                 if txids.contains(txid) {
-                    *self = Self::NoKnownSpends;
+                    *self = Self::NoKnown;
                 }
             }
-            Self::ConfirmedSpent(txid, _) => {
+            Self::Confirmed(txid, _) => {
                 if txids.contains(txid) {
-                    *self = Self::NoKnownSpends;
+                    *self = Self::NoKnown;
                 }
             }
         }
@@ -165,14 +165,14 @@ impl SpendConfirmationStatus {
     // this function and seperate enum possibilities is not a preferred pattern. please use match whenever possible.
     pub fn get_option_i32_and_option_txid(&self) -> (Option<i32>, Option<TxId>) {
         match self {
-            Self::NoKnownSpends => (None, None),
-            Self::PendingSpend(_) => (None, None),
-            Self::ConfirmedSpent(txid, block) => (Some(u32::from(*block) as i32), Some(*txid)),
+            Self::NoKnown => (None, None),
+            Self::Pending(_) => (None, None),
+            Self::Confirmed(txid, block) => (Some(u32::from(*block) as i32), Some(*txid)),
         }
     }
     pub fn to_opt_txidandu32(&self) -> Option<(TxId, u32)> {
         match self {
-            Self::ConfirmedSpent(txid, confirmation_height) => {
+            Self::Confirmed(txid, confirmation_height) => {
                 Some((*txid, u32::from(*confirmation_height)))
             }
             _ => None,
@@ -180,10 +180,10 @@ impl SpendConfirmationStatus {
     }
     pub fn to_serde_json(&self) -> serde_json::Value {
         match self {
-            Self::NoKnownSpends => serde_json::Value::from("no known spends"),
-            Self::PendingSpend(spent_txid) => serde_json::json!({
+            Self::NoKnown => serde_json::Value::from("no known spends"),
+            Self::Pending(spent_txid) => serde_json::json!({
                 "pending_spend_at_txid": format!("{}",spent_txid),}),
-            Self::ConfirmedSpent(spent_txid, block_height) => serde_json::json!({
+            Self::Confirmed(spent_txid, block_height) => serde_json::json!({
                 "spent_at_txid": format!("{}",spent_txid),
                 "spend_at_block_height": u32::from(*block_height),}),
         }
