@@ -50,9 +50,13 @@ impl ConfirmationStatus {
     }
     pub fn is_expired(&self, cutoff: &BlockHeight) -> bool {
         match self {
-            Self::Local => true,
+            Self::Local => true, // Why? What? Local is "expired"? I am skeptical, that seems wrong.
             Self::InMempool(option_blockheight) => match option_blockheight {
                 None => true,
+                // If the height that the note entered the mempool is less than the
+                // "cutoff", doesn't that mean that it's not expired?  If that interpretation
+                // is right then we should flip the inequality, if it's not correct, then I
+                // am misinterpreting at least one term.
                 Some(block_height) => block_height < cutoff,
             },
             Self::ConfirmedOnChain(_) => false,
