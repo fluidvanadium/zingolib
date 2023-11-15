@@ -2,6 +2,7 @@
 //! of these states.
 use zcash_primitives::{consensus::BlockHeight, transaction::TxId};
 
+/// What's the advantage of "PlaceHolders" over Options?
 /// A 32 wide bitmask with 0 in the last 5 places
 pub const BLOCKHEIGHT_PLACEHOLDER_LOCAL: u32 = <u32>::max_value() - (16 + 8 + 4 + 2 + 1);
 /// A 32 wide bitmask with 1 in the least significant place, and 0 inn each of the next 4
