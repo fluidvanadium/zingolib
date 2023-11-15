@@ -63,6 +63,8 @@ impl ConfirmationStatus {
         }
     }
     // this function and the placeholder is not a preferred pattern. please use match whenever possible.
+    //  Is this comment obsolete ---^?
+    // If this fn returns a BlockHeight, why is the type u32?
     pub fn get_height_and_is_confirmed(&self) -> (u32, bool) {
         match self {
             Self::Local => (BLOCKHEIGHT_PLACEHOLDER_LOCAL, false),
@@ -71,6 +73,8 @@ impl ConfirmationStatus {
         }
     }
     // note, by making unconfirmed the true case, this does a potentially confusing boolean flip
+    // I think having more than one way to do essentially the same thing (like an inverse) is
+    // a troublesome pattern, because it creates more code for bugs to hide in.
     pub fn get_height_and_is_unconfirmed(&self) -> (u32, bool) {
         match self {
             Self::Local => (BLOCKHEIGHT_PLACEHOLDER_LOCAL, true),
