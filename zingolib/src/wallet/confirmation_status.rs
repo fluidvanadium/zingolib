@@ -19,6 +19,7 @@ fn u32_height_or_placeholder(option_blockheight: Option<BlockHeight>) -> u32 {
     }
 }
 
+/// All notes are in one of these three states
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ConfirmationStatus {
     Local,
@@ -35,13 +36,13 @@ impl ConfirmationStatus {
     pub fn is_confirmed(&self) -> bool {
         matches!(self, Self::ConfirmedOnChain(_))
     }
-    pub fn is_confirmed_after_or_at(&self, height: &BlockHeight) -> bool {
+    pub fn is_confirmed_at_or_above(&self, height: &BlockHeight) -> bool {
         match self {
             Self::ConfirmedOnChain(block_height) => block_height >= height,
             _ => false,
         }
     }
-    pub fn is_confirmed_before_or_at(&self, height: &BlockHeight) -> bool {
+    pub fn is_confirmed_at_or_below(&self, height: &BlockHeight) -> bool {
         match self {
             Self::ConfirmedOnChain(block_height) => block_height <= height,
             _ => false,
