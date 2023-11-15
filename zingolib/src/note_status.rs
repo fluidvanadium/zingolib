@@ -22,7 +22,7 @@ fn u32_height_or_placeholder(option_blockheight: Option<BlockHeight>) -> u32 {
 
 /// All notes are in one of these three states
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum ConfirmationStatus {
+pub enum Creation {
     Local,
     /// we may know when it entered the mempool.
     InMempool(Option<BlockHeight>),
@@ -30,7 +30,7 @@ pub enum ConfirmationStatus {
     ConfirmedOnChain(BlockHeight),
 }
 
-impl ConfirmationStatus {
+impl Creation {
     pub fn is_in_mempool(&self) -> bool {
         matches!(self, Self::InMempool(_))
     }
@@ -86,7 +86,7 @@ impl ConfirmationStatus {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum SpendStatus {
+pub enum Spent {
     // A note can only be spent once.  Maybe this would be a reasonable place to reuse the
     // "Local" nym?   I guess that if the client in question is not the only client
     // with a spend capability for the note, then the might be actually spent, and the
@@ -96,16 +96,11 @@ pub enum SpendStatus {
     Confirmed(TxId, BlockHeight),
 }
 
-impl SpendStatus {
-    pub fn from_txid_and_confirmation(
-        spending_txid: TxId,
-        confirmation_status: ConfirmationStatus,
-    ) -> Self {
+impl Spent {
+    pub fn from_txid_and_confirmation(spending_txid: TxId, confirmation_status: Creation) -> Self {
         match confirmation_status {
-            ConfirmationStatus::Local | ConfirmationStatus::InMempool(_) => {
-                Self::Pending(spending_txid)
-            }
-            ConfirmationStatus::ConfirmedOnChain(confirmation_height) => {
+            Creation::Local | Creation::InMempool(_) => Self::Pending(spending_txid),
+            Creation::ConfirmedOnChain(confirmation_height) => {
                 Self::Confirmed(spending_txid, confirmation_height)
             }
         }

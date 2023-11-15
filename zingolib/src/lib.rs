@@ -9,6 +9,7 @@ pub mod compact_formats;
 pub mod error;
 pub mod grpc_connector;
 pub mod lightclient;
+pub mod note_status;
 pub mod wallet;
 
 pub use blaze::block_management_reorg_detection::BATCHSIZE;
