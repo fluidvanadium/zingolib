@@ -86,6 +86,10 @@ impl ConfirmationStatus {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SpendConfirmationStatus {
+    // A note can only be spent once.  Maybe this would be a reasonable place to reuse the
+    // "Local" nym?   I guess that if the client in question is not the only client
+    // with a spend capability for the note, then the might be actually spent, and the
+    // client is unaware..  but this is *only* possible if the spender is non-Local..  right?!
     NoKnownSpends,
     PendingSpend(TxId),
     ConfirmedSpent(TxId, BlockHeight),
