@@ -129,14 +129,24 @@ impl TransactionMetadataSet {
             ))
         })?;
 
-        //tODO is this function even necessary?
+        // toDo is this data even necessary?
+        // we will try only getting confirmed transactions here
         let some_txid_from_highest_wallet_block = current
             .values()
-            .fold(None, |c: Option<(TxId, BlockHeight)>, w| {
-                if c.is_none() || w.block_height > c.unwrap().1 {
-                    Some((w.txid, w.block_height))
+            .fold(None, |highest: Option<(TxId, BlockHeight)>, transaction| {
+                // todO perhaps there is a built in helper fn for this
+                if let Some(height) = transaction.status.get_confirmed_height() {
+                    if let Some(some_highest) = highest {
+                        if height > some_highest.1 {
+                            Some((transaction.txid, height))
+                        } else {
+                            Some(some_highest)
+                        }
+                    } else {
+                        Some((transaction.txid, height))
+                    }
                 } else {
-                    c
+                    highest
                 }
             })
             .map(|v| v.0);
