@@ -329,6 +329,7 @@ impl BlockManagementData {
         }
 
         // Remove all wallet transactions at the height
+        // toDo is there a better way to do this
         transaction_metadata_set
             .write()
             .await

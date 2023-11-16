@@ -129,6 +129,7 @@ impl TransactionMetadataSet {
             ))
         })?;
 
+        //tODO is this function even necessary?
         let some_txid_from_highest_wallet_block = current
             .values()
             .fold(None, |c: Option<(TxId, BlockHeight)>, w| {
