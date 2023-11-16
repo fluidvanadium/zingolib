@@ -4,8 +4,9 @@ members = [
     "zingocli",
     "zingoconfig",
     "zingo-memo",
-    "zingo-testutils",
     "zingo-status",
+    "zingo-testutils",
+    "integration-tests"
 ]
 resolver = "2"
 
