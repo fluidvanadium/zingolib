@@ -1765,13 +1765,11 @@ impl LightClient {
                             let address = LightWallet::note_address::<orchard::note_encryption::OrchardDomain>(&self.config.chain, orch_note_metadata, &self.wallet.wallet_capability());
                             let spendable = transaction_metadata.status.is_confirmed_before_or_at(&anchor_height) && orch_note_metadata.spent.is_none() && orch_note_metadata.unconfirmed_spent.is_none();
 
-                            let created_block:u32 = transaction_metadata.block_height.into();
                             Some(object!{
-                                "created_in_block"   => created_block,
+                                "status"             => String::from(transaction_metadata.status),
                                 "datetime"           => transaction_metadata.datetime,
                                 "created_in_txid"    => format!("{}", transaction_id),
                                 "value"              => orch_note_metadata.note.value().inner(),
-                                "status"             => String::from(transaction_metadata.status),
                                 "is_change"          => orch_note_metadata.is_change,
                                 "address"            => address,
                                 "spendable"          => spendable,
@@ -1805,7 +1803,6 @@ impl LightClient {
                         if !all_notes && utxo.spent.is_some() {
                             None
                         } else {
-                            let created_block:u32 = wtx.block_height.into();
                             let recipient = zcash_client_backend::address::RecipientAddress::decode(&self.config.chain, &utxo.address);
                             let taddr = match recipient {
                             Some(zcash_client_backend::address::RecipientAddress::Transparent(taddr)) => taddr,
@@ -1813,7 +1810,7 @@ impl LightClient {
                             };
 
                             Some(object!{
-                                "created_in_block"   => created_block,
+                                "status"             => String::from(wtx.status),
                                 "datetime"           => wtx.datetime,
                                 "created_in_txid"    => format!("{}", transaction_id),
                                 "value"              => utxo.value,
