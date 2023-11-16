@@ -10,13 +10,6 @@ pub const BLOCKHEIGHT_PLACEHOLDER_NOKNOWNSPENDS: u32 = <u32>::max_value() - (32 
 /// A 32 wide bitmask with 0 at 2^5, 2^3, 2^2, and 2^1
 pub const BLOCKHEIGHT_PLACEHOLDER_PENDINGSPEND: u32 = <u32>::max_value() - (32 + 8 + 4 + 2);
 
-fn u32_height_or_placeholder(option_blockheight: Option<BlockHeight>) -> u32 {
-    match option_blockheight {
-        Some(blockheight) => u32::from(blockheight),
-        None => BLOCKHEIGHT_PLACEHOLDER_INMEMPOOL,
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ConfirmationStatus {
     Local,
@@ -65,7 +58,8 @@ impl ConfirmationStatus {
             Self::ConfirmedOnChain(_) => false,
         }
     }
-    // temporary. fixing this should fix the confirmation bug. please use match whenever possible.
+    // temporary. fixing this should fix the confirmation bug.
+    // this function and the placeholder is not a preferred pattern. please use match whenever possible.
     pub fn get_height(&self) -> BlockHeight {
         match self {
             Self::Local => BlockHeight::from_u32(BLOCKHEIGHT_PLACEHOLDER_LOCAL),
@@ -73,26 +67,6 @@ impl ConfirmationStatus {
                 option_blockheight.unwrap_or(BlockHeight::from_u32(BLOCKHEIGHT_PLACEHOLDER_LOCAL))
             }
             Self::ConfirmedOnChain(blockheight) => *blockheight,
-        }
-    }
-    // this function and the placeholder is not a preferred pattern. please use match whenever possible.
-    pub fn get_height_u32_and_is_confirmed(&self) -> (u32, bool) {
-        match self {
-            Self::Local => (BLOCKHEIGHT_PLACEHOLDER_LOCAL, false),
-            Self::InMempool(option_blockheight) => {
-                (u32_height_or_placeholder(*option_blockheight), false)
-            }
-            Self::ConfirmedOnChain(blockheight) => (u32::from(*blockheight), true),
-        }
-    }
-    // note, by making unconfirmed the true case, this does a potentially confusing boolean flip
-    pub fn get_height_u32_and_is_unconfirmed(&self) -> (u32, bool) {
-        match self {
-            Self::Local => (BLOCKHEIGHT_PLACEHOLDER_LOCAL, true),
-            Self::InMempool(option_blockheight) => {
-                (u32_height_or_placeholder(*option_blockheight), true)
-            }
-            Self::ConfirmedOnChain(blockheight) => (u32::from(*blockheight), false),
         }
     }
 }
