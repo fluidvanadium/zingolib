@@ -41,7 +41,6 @@ impl LightClient {
                     object! {
                         "block_height" => block_height,
                         "status"       => String::from(transaction_metadata.status),
-                        "unconfirmed" => transaction_metadata.unconfirmed,
                         "datetime"     => transaction_metadata.datetime,
                         "position"     => i,
                         "txid"         => format!("{}", transaction_metadata.txid),
@@ -97,7 +96,6 @@ impl LightClient {
         object! {
             "block_height" => block_height,
             "status"       => String::from(wallet_transaction.status),
-            "unconfirmed" => wallet_transaction.unconfirmed,
             "datetime"     => wallet_transaction.datetime,
             "txid"         => format!("{}", wallet_transaction.txid),
             "zec_price"    => wallet_transaction.price.map(|p| (p * 100.0).round() / 100.0),
@@ -150,7 +148,6 @@ impl LightClient {
                         consumer_notes_by_tx.push(object! {
                             "block_height" => block_height,
                             "status"       => String::from(wallet_transaction.status),
-                            "unconfirmed"  => wallet_transaction.unconfirmed,
                             "datetime"     => wallet_transaction.datetime,
                             "txid"         => format!("{}", txid),
                             "amount"       => net_transparent_value,
