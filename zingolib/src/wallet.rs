@@ -450,7 +450,7 @@ impl LightWallet {
         self.blocks.read().await.iter().cloned().collect()
     }
 
-    // Get the first block that this wallet has a transaction in. This is often used as the wallet's "birthday"
+    // Get the first block that this wallet has a confirmed transaction in. This is often used as the wallet's "birthday"
     // If there are no transactions, then the actual birthday (which is recorder at wallet creation) is returned
     // If no birthday was recorded, return the sapling activation height
     pub async fn get_first_transaction_block(&self) -> u64 {
@@ -462,7 +462,8 @@ impl LightWallet {
             .await
             .current
             .values()
-            .map(|wtx| u64::from(wtx.block_height))
+            .filter_map(|wtx| wtx.status.get_confirmed_height())
+            .map(|height| u64::from(height))
             .min();
 
         let birthday = self.birthday.load(std::sync::atomic::Ordering::SeqCst);

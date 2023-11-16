@@ -58,6 +58,12 @@ impl ConfirmationStatus {
             Self::ConfirmedOnChain(_) => false,
         }
     }
+    pub fn get_confirmed_height(&self) -> Option<BlockHeight> {
+        match self {
+            Self::ConfirmedOnChain(blockheight) => Some(*blockheight),
+            _ => None,
+        }
+    }
     // temporary. fixing this should fix the confirmation bug.
     // this function and the placeholder is not a preferred pattern. please use match whenever possible.
     pub fn get_height(&self) -> BlockHeight {
