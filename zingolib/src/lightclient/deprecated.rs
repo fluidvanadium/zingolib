@@ -40,6 +40,7 @@ impl LightClient {
                     let block_height: u32 = transaction_metadata.block_height.into();
                     object! {
                         "block_height" => block_height,
+                        "status"       => String::from(transaction_metadata.status),
                         "unconfirmed" => transaction_metadata.unconfirmed,
                         "datetime"     => transaction_metadata.datetime,
                         "position"     => i,
@@ -95,6 +96,7 @@ impl LightClient {
         let block_height: u32 = wallet_transaction.block_height.into();
         object! {
             "block_height" => block_height,
+            "status"       => String::from(wallet_transaction.status),
             "unconfirmed" => wallet_transaction.unconfirmed,
             "datetime"     => wallet_transaction.datetime,
             "txid"         => format!("{}", wallet_transaction.txid),
@@ -147,6 +149,7 @@ impl LightClient {
                         let block_height: u32 = wallet_transaction.block_height.into();
                         consumer_notes_by_tx.push(object! {
                             "block_height" => block_height,
+                            "status"       => String::from(wallet_transaction.status),
                             "unconfirmed"  => wallet_transaction.unconfirmed,
                             "datetime"     => wallet_transaction.datetime,
                             "txid"         => format!("{}", txid),
