@@ -542,7 +542,7 @@ impl LightClient {
                         transaction_md.block_height,
                         transaction_md.datetime,
                         transaction_md.price,
-                        transaction_md.unconfirmed,
+                        !transaction_md.status.is_confirmed(),
                     );
                     summaries.push(ValueTransfer {
                         block_height,
@@ -1483,7 +1483,7 @@ impl LightClient {
             transaction_md.block_height,
             transaction_md.datetime,
             transaction_md.price,
-            transaction_md.unconfirmed,
+            !transaction_md.status.is_confirmed(),
         );
         match (
             transaction_md.is_outgoing_transaction(),
