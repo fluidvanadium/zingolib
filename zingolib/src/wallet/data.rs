@@ -1178,11 +1178,21 @@ impl TransactionMetadata {
 
     pub fn value_spent_by_pool(&self) -> [u64; 3] {
         [
-            self.total_transparent_value_spent,
-            self.total_sapling_value_spent,
-            self.total_orchard_value_spent,
+            self.value_spent_transparent(),
+            self.value_spent_sapling(),
+            self.value_spent_orchard(),
         ]
     }
+    pub fn value_spent_transparent(&self) -> u64 {
+        self.total_transparent_value_spent
+    }
+    pub fn value_spent_sapling(&self) -> u64 {
+        self.total_sapling_value_spent
+    }
+    pub fn value_spent_orchard(&self) -> u64 {
+        self.total_orchard_value_spent
+    }
+
     pub fn write<W: Write>(&self, mut writer: W) -> io::Result<()> {
         writer.write_u64::<LittleEndian>(Self::serialized_version())?;
 
