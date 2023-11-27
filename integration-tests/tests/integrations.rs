@@ -3404,7 +3404,7 @@ mod slow {
         reci_arc.clear_state().await;
         println!("start_height: {}", height);
         println!("summaries_now: {:#?}", reci_arc.do_list_txsummaries().await);
-        let _res = do_sync_killable(reci_arc.clone(), height + 0)
+        let _res = do_sync_killable(reci_arc.clone(), height + 2)
             .await
             .unwrap_err();
         println!("summaries_t+2: {:#?}", reci_arc.do_list_txsummaries().await);
