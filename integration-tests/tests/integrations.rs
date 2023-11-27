@@ -3378,32 +3378,33 @@ mod slow {
             .await
             .as_u32()
             .unwrap();
-        for i in 1..9 {
+        let _ = faucet.do_sync(false).await;
+        faucet
+            .do_send(vec![(
+                &get_base_address!(recipient, "sapling"),
+                100_000,
+                None,
+            )])
+            .await
+            .unwrap();
+        for i in 1..4 {
             zingo_testutils::increase_server_height(&regtest_manager, 1).await;
-            let _ = faucet.do_sync(false).await;
-            faucet
+            let _ = recipient.do_sync(false).await;
+            recipient
                 .do_send(vec![(
-                    &get_base_address!(recipient, "sapling"),
-                    100 + i,
+                    &get_base_address!(recipient, "unified"),
+                    200 + i,
                     None,
                 )])
                 .await
                 .unwrap();
-            println!(
-                "sent value {} at faucet height {}",
-                100 + i,
-                faucet
-                    .do_wallet_last_scanned_height()
-                    .await
-                    .as_u32()
-                    .unwrap()
-            );
         }
 
         let reci_arc = std::sync::Arc::new(recipient);
+        reci_arc.clear_state().await;
         println!("start_height: {}", height);
         println!("summaries_now: {:#?}", reci_arc.do_list_txsummaries().await);
-        let _res = do_sync_killable(reci_arc.clone(), height + 2)
+        let _res = do_sync_killable(reci_arc.clone(), height + 0)
             .await
             .unwrap_err();
         println!("summaries_t+2: {:#?}", reci_arc.do_list_txsummaries().await);
