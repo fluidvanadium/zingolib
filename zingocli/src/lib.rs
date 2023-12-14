@@ -280,10 +280,8 @@ impl ConfigTemplate {
         } else {
             None
         };
-        let from = matches.get_one::<&str>("from");
-        let maybe_birthday = matches
-            .get_one::<&str>("birthday")
-            .map(|bday| bday.to_string());
+        let from = matches.get_one::<String>("from");
+        let maybe_birthday = matches.get_one::<String>("birthday");
         if from.is_some() && maybe_birthday.is_none() {
             eprintln!("ERROR!");
             eprintln!(
@@ -302,7 +300,7 @@ to scan from the start of the blockchain."
                 "regtest mode incompatible with custom chain selection".to_string(),
             ));
         }
-        let birthday = match maybe_birthday.unwrap_or("0".to_string()).parse::<u64>() {
+        let birthday = match maybe_birthday.unwrap_or(&"0".to_string()).parse::<u64>() {
             Ok(b) => b,
             Err(e) => {
                 return Err(TemplateFillError::InvalidBirthday(format!(
