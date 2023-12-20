@@ -30,3 +30,7 @@ pub fn git_description() {
     )
     .unwrap();
 }
+
+pub fn path_to_test_binaries() -> std::path::PathBuf {
+    dbg!(std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test_binaries"))
+}

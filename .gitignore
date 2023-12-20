@@ -24,5 +24,5 @@ zingocli/tests/times/*
 zingocli/wallets/*
 zingolib/target
 zingolib/test-data/*
-zingo-testutils/test_binaries
+build_utils/test_binaries
 
