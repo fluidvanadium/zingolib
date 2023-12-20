@@ -43,4 +43,4 @@ serde_json = "1.0.107"
 tonic-build = { workspace = true }
 
 [dev-dependencies]
-build_utils = { path = "../build_utils" }
+test_binaries = { path = "../test_binaries" }

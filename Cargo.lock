@@ -680,7 +680,6 @@ version = "0.1.0"
 dependencies = [
  "bech32",
  "bip0039",
- "build_utils",
  "env_logger",
  "futures-util",
  "hex 0.3.2",
@@ -697,6 +696,7 @@ dependencies = [
  "serde_json",
  "shardtree",
  "tempdir",
+ "test_binaries",
  "tokio",
  "tonic",
  "tonic-build 0.7.2",
@@ -1436,7 +1436,6 @@ name = "integration-tests"
 version = "0.2.0"
 dependencies = [
  "bip0039",
- "build_utils",
  "hex 0.3.2",
  "itertools 0.10.5",
  "json",
@@ -1444,6 +1443,7 @@ dependencies = [
  "orchard",
  "serde_json",
  "shardtree",
+ "test_binaries",
  "tokio",
  "zcash_address",
  "zcash_client_backend",
@@ -3098,6 +3098,10 @@ checksum = "ff1bc3d3f05aff0403e8ac0d92ced918ec05b666a43f83297ccef5bea8a3d449"
 dependencies = [
  "winapi-util",
 ]
+
+[[package]]
+name = "test_binaries"
+version = "0.1.0"
 
 [[package]]
 name = "thiserror"

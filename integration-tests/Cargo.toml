@@ -24,4 +24,4 @@ bip0039 = "0.10.1"
 serde_json = "1.0.107"
 
 [dev-dependencies]
-build_utils = { path = "../build_utils" }
+test_binaries = { path = "../test_binaries" }
