@@ -1705,6 +1705,7 @@ impl LightClient {
             transaction_md.price,
             !transaction_md.status.is_confirmed(),
         );
+        panic!();
         match (
             transaction_md.is_outgoing_transaction(),
             transaction_md.is_incoming_transaction(),
