@@ -973,16 +973,16 @@ impl TransactionMetadata {
         if self.total_value_spent() >= outputted {
             Ok(self.total_value_spent() - outputted)
         } else {
-            ZingoLibError::MetadataUnderflow(format!(
-                "for txid {} with status {}: spent {}, outgoing {}, returned change {} \n {:?}",
-                self.txid,
-                self.status,
-                self.total_value_spent(),
-                self.value_outgoing(),
-                self.total_change_returned(),
-                self,
-            ))
-            .handle();
+            // ZingoLibError::MetadataUnderflow(format!(
+            //     "for txid {} with status {}: spent {}, outgoing {}, returned change {} \n {:?}",
+            //     self.txid,
+            //     self.status,
+            //     self.total_value_spent(),
+            //     self.value_outgoing(),
+            //     self.total_change_returned(),
+            //     self,
+            // ))
+            // .handle()
             panic!();
         }
     }
