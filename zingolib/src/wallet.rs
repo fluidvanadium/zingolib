@@ -661,7 +661,7 @@ impl LightWallet {
         let external_version = reader.read_u64::<LittleEndian>()?;
         if external_version > Self::serialized_version() {
             let e = format!(
-                "Don't know how to read wallet version {}. Do you have the latest version?\n{}",
+                "Don't know how to read beep boop wallet version {}. Do you have the latest version?\n{}",
                 external_version,
                 "Note: wallet files from zecwallet or beta zingo are not compatible"
             );
