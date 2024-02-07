@@ -11,7 +11,7 @@ members = [
     "zingolib",
     "zingoconfig",
     "zingo-testvectors",
-    "zingo-memo",
+    "zingo-memo", "zingo-store",
 ]
 resolver = "2"
 
