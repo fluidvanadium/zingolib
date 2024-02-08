@@ -116,7 +116,7 @@ pub struct ZingoConfig {
     pub logfile_name: PathBuf,
 }
 impl ZingoConfigBuilder {
-    /// Specify the URI of the proxy server we download blockchain information from
+    /// Specify the URI of the proxy server we download blockchain information from.
     /// # Examples
     /// ```
     /// use zingoconfig::ZingoConfigBuilder;
@@ -127,6 +127,9 @@ impl ZingoConfigBuilder {
         self.lightwalletd_uri = Some(lightwalletd_uri);
         self
     }
+    /// Select the chain the consuming client will interact with.
+    /// See https://github.com/bitcoin/bips/blob/master/bip-0087.mediawiki#coin-type
+    /// for chain types.
     /// # Examples
     /// ```
     /// use zingoconfig::ZingoConfigBuilder;
@@ -389,6 +392,9 @@ impl ZingoConfig {
         log_path.into_boxed_path()
     }
 
+    /// Coin Types are specified in public registries to disambiguate coin variants
+    ///  https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+    ///  ZEC is registered as 133 (0x80000085) for MainNet and 1 (0x80000001) for TestNet (all coins)
     pub fn get_coin_type(&self) -> u32 {
         self.chain.coin_type()
     }
