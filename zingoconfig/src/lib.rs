@@ -116,7 +116,7 @@ pub struct ZingoConfig {
     pub logfile_name: PathBuf,
 }
 impl ZingoConfigBuilder {
-    /// the proxy server we download blockchain information from
+    /// Specify the URI of the proxy server we download blockchain information from
     /// # Examples
     /// ```
     /// use zingoconfig::ZingoConfigBuilder;
