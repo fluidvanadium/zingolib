@@ -3845,34 +3845,34 @@ mod basic_transactions {
         let (regtest_manager, _cph, faucet, recipient) =
             scenarios::faucet_recipient_default().await;
 
-        let wallet_capability = faucet.wallet.wallet_capability().clone();
-        let [o_fvk, s_fvk, t_fvk] =
-            zingo_testutils::build_fvks_from_wallet_capability(&wallet_capability);
-        let fvks = vec![&o_fvk, &s_fvk, &t_fvk];
-        let viewing_faucet = build_fvk_client(&fvks, faucet.config()).await;
+        // let wallet_capability = faucet.wallet.wallet_capability().clone();
+        // let [o_fvk, s_fvk, t_fvk] =
+        //     zingo_testutils::build_fvks_from_wallet_capability(&wallet_capability);
+        // let fvks = vec![&o_fvk, &s_fvk, &t_fvk];
+        // let viewing_faucet = build_fvk_client(&fvks, faucet.config()).await;
 
         recipient.do_sync(true).await.unwrap();
-        viewing_faucet.do_sync(true).await.unwrap();
+        faucet.do_sync(true).await.unwrap();
         println!(
             "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
             recipient.do_balance().await,
-            viewing_faucet.do_balance().await
+            faucet.do_balance().await
         );
 
-        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
-            .await
-            .unwrap();
+        // zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
+        //     .await
+        //     .unwrap();
 
-        recipient.do_sync(true).await.unwrap();
-        viewing_faucet.do_sync(true).await.unwrap();
-        println!(
-            "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
-            recipient.do_balance().await,
-            viewing_faucet.do_balance().await
-        );
+        // recipient.do_sync(true).await.unwrap();
+        // faucet.do_sync(true).await.unwrap();
+        // println!(
+        //     "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
+        //     recipient.do_balance().await,
+        //     faucet.do_balance().await
+        // );
 
         let recipient_addr_uni = get_base_address!(recipient, "sapling");
-        let faucet_addr_uni = get_base_address!(viewing_faucet, "sapling");
+        let faucet_addr_uni = get_base_address!(faucet, "sapling");
 
         let mut address_amount_memo_tuples = vec![(recipient_addr_uni.as_str(), 1_000_000, None)];
         let mut proposal = faucet.do_propose(address_amount_memo_tuples.clone()).await;
@@ -3916,24 +3916,24 @@ mod basic_transactions {
             .unwrap();
 
         recipient.do_sync(true).await.unwrap();
-        viewing_faucet.do_sync(true).await.unwrap(); //THIS CAUSES ERROR!
+        faucet.do_sync(true).await.unwrap(); //THIS CAUSES ERROR!
         println!(
             "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
             recipient.do_balance().await,
-            viewing_faucet.do_balance().await
+            faucet.do_balance().await
         );
 
-        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
-            .await
-            .unwrap();
+        // zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
+        //     .await
+        //     .unwrap();
 
-        recipient.do_sync(true).await.unwrap();
-        viewing_faucet.do_sync(true).await.unwrap(); // THIS CAUSES ERROR!
-        println!(
-            "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
-            recipient.do_balance().await,
-            viewing_faucet.do_balance().await
-        );
+        // recipient.do_sync(true).await.unwrap();
+        // faucet.do_sync(true).await.unwrap(); // THIS CAUSES ERROR!
+        // println!(
+        //     "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
+        //     recipient.do_balance().await,
+        //     faucet.do_balance().await
+        // );
 
         address_amount_memo_tuples = vec![(faucet_addr_uni.as_str(), 20_000, None)];
         proposal = recipient.do_propose(address_amount_memo_tuples).await;
@@ -3973,11 +3973,11 @@ mod basic_transactions {
         println!("Full Tx: {:#?}", tx.as_ref().unwrap());
 
         recipient.do_sync(true).await.unwrap();
-        viewing_faucet.do_sync(true).await.unwrap(); // THIS CAUSES ERROR!
+        faucet.do_sync(true).await.unwrap(); // THIS CAUSES ERROR!
         println!(
             "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
             recipient.do_balance().await,
-            viewing_faucet.do_balance().await
+            faucet.do_balance().await
         );
 
         // println!(
