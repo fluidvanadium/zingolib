@@ -58,7 +58,7 @@ impl TransactionContext {
         }
         let mut outgoing_metadatas = vec![];
         // Execute scanning operations
-        self.scan_transaction_into_record(
+        self.decrypt_and_record_transaction(
             transaction,
             status,
             block_time,
@@ -115,7 +115,7 @@ impl TransactionContext {
     }
 
     #[allow(clippy::too_many_arguments)]
-    async fn scan_transaction_into_record(
+    async fn decrypt_and_record_transaction(
         &self,
         transaction: &Transaction,
         status: ConfirmationStatus,
@@ -127,7 +127,7 @@ impl TransactionContext {
     ) {
         //todo: investigate scanning all bundles simultaneously
 
-        self.scan_transaction_into_record_transparent(
+        self.decrypt_and_record_transaction_transparent(
             transaction,
             status,
             block_time,
@@ -135,7 +135,7 @@ impl TransactionContext {
             taddrs_set,
         )
         .await;
-        self.scan_transaction_into_record_sapling(
+        self.decrypt_and_record_transaction_sapling(
             transaction,
             status,
             block_time,
@@ -144,7 +144,7 @@ impl TransactionContext {
             arbitrary_memos_with_txids,
         )
         .await;
-        self.scan_transaction_into_record_orchard(
+        self.decrypt_and_record_transaction_orchard(
             transaction,
             status,
             block_time,
@@ -155,7 +155,7 @@ impl TransactionContext {
         .await;
     }
 
-    async fn scan_transaction_into_record_transparent(
+    async fn decrypt_and_record_transaction_transparent(
         &self,
         transaction: &Transaction,
         status: ConfirmationStatus,
@@ -243,7 +243,7 @@ impl TransactionContext {
         }
     }
     #[allow(clippy::too_many_arguments)]
-    async fn scan_transaction_into_record_sapling(
+    async fn decrypt_and_record_transaction_sapling(
         &self,
         transaction: &Transaction,
         status: ConfirmationStatus,
@@ -252,7 +252,7 @@ impl TransactionContext {
         outgoing_metadatas: &mut Vec<OutgoingTxData>,
         arbitrary_memos_with_txids: &mut Vec<(ParsedMemo, TxId)>,
     ) {
-        self.scan_transaction_into_record_domain::<SaplingDomain>(
+        self.decrypt_and_record_transaction_domain::<SaplingDomain>(
             transaction,
             status,
             block_time,
@@ -264,7 +264,7 @@ impl TransactionContext {
         .await
     }
     #[allow(clippy::too_many_arguments)]
-    async fn scan_transaction_into_record_orchard(
+    async fn decrypt_and_record_transaction_orchard(
         &self,
         transaction: &Transaction,
         status: ConfirmationStatus,
@@ -273,7 +273,7 @@ impl TransactionContext {
         outgoing_metadatas: &mut Vec<OutgoingTxData>,
         arbitrary_memos_with_txids: &mut Vec<(ParsedMemo, TxId)>,
     ) {
-        self.scan_transaction_into_record_domain::<OrchardDomain>(
+        self.decrypt_and_record_transaction_domain::<OrchardDomain>(
             transaction,
             status,
             block_time,
@@ -291,7 +291,7 @@ impl TransactionContext {
     /// In Orchard the components are "Actions", each of which
     /// _IS_ 1 Spend and 1 Output.
     #[allow(clippy::too_many_arguments)]
-    async fn scan_transaction_into_record_domain<D>(
+    async fn decrypt_and_record_transaction_domain<D>(
         &self,
         transaction: &Transaction,
         status: ConfirmationStatus,
@@ -365,7 +365,7 @@ impl TransactionContext {
             return;
         };
 
-        decrypt_and_record_incoming_transactions::<D>(
+        decrypt_and_record_transaction_domain_incoming::<D>(
             external_incoming_viewing_key,
             &domain_tagged_outputs,
             transaction,
@@ -455,7 +455,7 @@ impl TransactionContext {
             if let Ok(internal_incoming_viewing_key) =
                 D::wc_scope_to_incoming_viewing_key(&self.key, Internal)
             {
-                decrypt_and_record_incoming_transactions::<D>(
+                decrypt_and_record_transaction_domain_incoming::<D>(
                     internal_incoming_viewing_key,
                     &domain_tagged_outputs,
                     transaction,
@@ -522,7 +522,7 @@ impl TransactionContext {
     }
 }
 
-pub async fn decrypt_and_record_incoming_transactions<D>(
+pub async fn decrypt_and_record_transaction_domain_incoming<D>(
     incoming_viewing_key: <D as Domain>::IncomingViewingKey,
     domain_tagged_outputs: &Vec<(D, <<D as DomainWalletExt>::Bundle as Bundle<D>>::Output)>,
     transaction: &Transaction,
