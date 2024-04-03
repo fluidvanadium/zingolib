@@ -29,46 +29,6 @@ use zip32::Scope::Internal;
 use super::TransactionContext;
 
 impl TransactionContext {
-    #[allow(clippy::too_many_arguments)]
-    async fn execute_bundlescans_internal(
-        &self,
-        transaction: &Transaction,
-        status: ConfirmationStatus,
-        block_time: u32,
-        is_outgoing_transaction: &mut bool,
-        outgoing_metadatas: &mut Vec<OutgoingTxData>,
-        arbitrary_memos_with_txids: &mut Vec<(ParsedMemo, TxId)>,
-        taddrs_set: &HashSet<String>,
-    ) {
-        //todo: investigate scanning all bundles simultaneously
-
-        self.scan_transparent_bundle(
-            transaction,
-            status,
-            block_time,
-            is_outgoing_transaction,
-            taddrs_set,
-        )
-        .await;
-        self.scan_sapling_bundle(
-            transaction,
-            status,
-            block_time,
-            is_outgoing_transaction,
-            outgoing_metadatas,
-            arbitrary_memos_with_txids,
-        )
-        .await;
-        self.scan_orchard_bundle(
-            transaction,
-            status,
-            block_time,
-            is_outgoing_transaction,
-            outgoing_metadatas,
-            arbitrary_memos_with_txids,
-        )
-        .await;
-    }
     pub(crate) async fn scan_full_tx(
         &self,
         transaction: &Transaction,
@@ -98,7 +58,7 @@ impl TransactionContext {
         }
         let mut outgoing_metadatas = vec![];
         // Execute scanning operations
-        self.execute_bundlescans_internal(
+        self.scan_transaction_into_record(
             transaction,
             status,
             block_time,
@@ -154,60 +114,48 @@ impl TransactionContext {
         }
     }
 
-    async fn update_outgoing_txdatas_with_uas(
+    #[allow(clippy::too_many_arguments)]
+    async fn scan_transaction_into_record(
         &self,
-        txid_indexed_zingo_memos: Vec<(ParsedMemo, TxId)>,
+        transaction: &Transaction,
+        status: ConfirmationStatus,
+        block_time: u32,
+        is_outgoing_transaction: &mut bool,
+        outgoing_metadatas: &mut Vec<OutgoingTxData>,
+        arbitrary_memos_with_txids: &mut Vec<(ParsedMemo, TxId)>,
+        taddrs_set: &HashSet<String>,
     ) {
-        for (parsed_zingo_memo, txid) in txid_indexed_zingo_memos {
-            match parsed_zingo_memo {
-                ParsedMemo::Version0 { uas } => {
-                    for ua in uas {
-                        if let Some(transaction) = self
-                            .transaction_metadata_set
-                            .write()
-                            .await
-                            .current
-                            .get_mut(&txid)
-                        {
-                            if !transaction.outgoing_tx_data.is_empty() {
-                                let outgoing_potential_receivers = [
-                                    ua.orchard().map(|oaddr| {
-                                        oaddr.b32encode_for_network(&self.config.chain)
-                                    }),
-                                    ua.sapling().map(|zaddr| {
-                                        zaddr.b32encode_for_network(&self.config.chain)
-                                    }),
-                                    ua.transparent()
-                                        .map(|taddr| address_from_pubkeyhash(&self.config, *taddr)),
-                                    Some(ua.encode(&self.config.chain)),
-                                ];
-                                transaction
-                                    .outgoing_tx_data
-                                    .iter_mut()
-                                    .filter(|out_meta| {
-                                        outgoing_potential_receivers
-                                            .contains(&Some(out_meta.to_address.clone()))
-                                    })
-                                    .for_each(|out_metadata| {
-                                        out_metadata.recipient_ua =
-                                            Some(ua.encode(&self.config.chain))
-                                    })
-                            }
-                        }
-                    }
-                }
-                other_memo_version => {
-                    log::error!(
-                        "Wallet internal memo is from a future version of the protocol\n\
-                        Please ensure that your software is up-to-date.\n\
-                        Memo: {other_memo_version:?}"
-                    )
-                }
-            }
-        }
+        //todo: investigate scanning all bundles simultaneously
+
+        self.scan_transaction_into_record_transparent(
+            transaction,
+            status,
+            block_time,
+            is_outgoing_transaction,
+            taddrs_set,
+        )
+        .await;
+        self.scan_transaction_into_record_sapling(
+            transaction,
+            status,
+            block_time,
+            is_outgoing_transaction,
+            outgoing_metadatas,
+            arbitrary_memos_with_txids,
+        )
+        .await;
+        self.scan_transaction_into_record_orchard(
+            transaction,
+            status,
+            block_time,
+            is_outgoing_transaction,
+            outgoing_metadatas,
+            arbitrary_memos_with_txids,
+        )
+        .await;
     }
 
-    async fn scan_transparent_bundle(
+    async fn scan_transaction_into_record_transparent(
         &self,
         transaction: &Transaction,
         status: ConfirmationStatus,
@@ -295,7 +243,7 @@ impl TransactionContext {
         }
     }
     #[allow(clippy::too_many_arguments)]
-    async fn scan_sapling_bundle(
+    async fn scan_transaction_into_record_sapling(
         &self,
         transaction: &Transaction,
         status: ConfirmationStatus,
@@ -304,7 +252,7 @@ impl TransactionContext {
         outgoing_metadatas: &mut Vec<OutgoingTxData>,
         arbitrary_memos_with_txids: &mut Vec<(ParsedMemo, TxId)>,
     ) {
-        self.scan_bundle::<SaplingDomain>(
+        self.scan_transaction_into_record_domain::<SaplingDomain>(
             transaction,
             status,
             block_time,
@@ -316,7 +264,7 @@ impl TransactionContext {
         .await
     }
     #[allow(clippy::too_many_arguments)]
-    async fn scan_orchard_bundle(
+    async fn scan_transaction_into_record_orchard(
         &self,
         transaction: &Transaction,
         status: ConfirmationStatus,
@@ -325,7 +273,7 @@ impl TransactionContext {
         outgoing_metadatas: &mut Vec<OutgoingTxData>,
         arbitrary_memos_with_txids: &mut Vec<(ParsedMemo, TxId)>,
     ) {
-        self.scan_bundle::<OrchardDomain>(
+        self.scan_transaction_into_record_domain::<OrchardDomain>(
             transaction,
             status,
             block_time,
@@ -343,7 +291,7 @@ impl TransactionContext {
     /// In Orchard the components are "Actions", each of which
     /// _IS_ 1 Spend and 1 Output.
     #[allow(clippy::too_many_arguments)]
-    async fn scan_bundle<D>(
+    async fn scan_transaction_into_record_domain<D>(
         &self,
         transaction: &Transaction,
         status: ConfirmationStatus,
@@ -518,6 +466,58 @@ impl TransactionContext {
                 )
                 .await;
             };
+        }
+    }
+    async fn update_outgoing_txdatas_with_uas(
+        &self,
+        txid_indexed_zingo_memos: Vec<(ParsedMemo, TxId)>,
+    ) {
+        for (parsed_zingo_memo, txid) in txid_indexed_zingo_memos {
+            match parsed_zingo_memo {
+                ParsedMemo::Version0 { uas } => {
+                    for ua in uas {
+                        if let Some(transaction) = self
+                            .transaction_metadata_set
+                            .write()
+                            .await
+                            .current
+                            .get_mut(&txid)
+                        {
+                            if !transaction.outgoing_tx_data.is_empty() {
+                                let outgoing_potential_receivers = [
+                                    ua.orchard().map(|oaddr| {
+                                        oaddr.b32encode_for_network(&self.config.chain)
+                                    }),
+                                    ua.sapling().map(|zaddr| {
+                                        zaddr.b32encode_for_network(&self.config.chain)
+                                    }),
+                                    ua.transparent()
+                                        .map(|taddr| address_from_pubkeyhash(&self.config, *taddr)),
+                                    Some(ua.encode(&self.config.chain)),
+                                ];
+                                transaction
+                                    .outgoing_tx_data
+                                    .iter_mut()
+                                    .filter(|out_meta| {
+                                        outgoing_potential_receivers
+                                            .contains(&Some(out_meta.to_address.clone()))
+                                    })
+                                    .for_each(|out_metadata| {
+                                        out_metadata.recipient_ua =
+                                            Some(ua.encode(&self.config.chain))
+                                    })
+                            }
+                        }
+                    }
+                }
+                other_memo_version => {
+                    log::error!(
+                        "Wallet internal memo is from a future version of the protocol\n\
+                        Please ensure that your software is up-to-date.\n\
+                        Memo: {other_memo_version:?}"
+                    )
+                }
+            }
         }
     }
 }
