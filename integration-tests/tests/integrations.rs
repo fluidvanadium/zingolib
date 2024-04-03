@@ -3654,7 +3654,7 @@ mod basic_transactions {
     use std::future::Future;
 
     use zcash_primitives::memo::MemoBytes;
-    use zingo_testutils::{build_fvk_client, scenarios};
+    use zingo_testutils::scenarios;
     use zingolib::{get_base_address, lightclient::LightClient};
 
     async fn standard_send_sync_check<F, Fut>(
@@ -3698,45 +3698,27 @@ mod basic_transactions {
     }
 
     #[tokio::test]
-    async fn standard_proposal_send() {
+    async fn standard_proposal_fee() {
         let (regtest_manager, _cph, faucet, recipient) =
             scenarios::faucet_recipient_default().await;
 
-        // let wallet_capability = faucet.wallet.wallet_capability().clone();
-        // let [o_fvk, s_fvk, t_fvk] =
-        //     zingo_testutils::build_fvks_from_wallet_capability(&wallet_capability);
-        // let fvks = vec![&o_fvk, &s_fvk, &t_fvk];
-        // let viewing_faucet = build_fvk_client(&fvks, faucet.config()).await;
+        let recipient_addr_uni = get_base_address!(recipient, "sapling");
+        let faucet_addr_uni = get_base_address!(faucet, "unified");
 
         recipient.do_sync(true).await.unwrap();
         faucet.do_sync(true).await.unwrap();
         println!(
-            "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
+            "Recipient Balance: {:?}\n\nFaucet Balance: {:?}\n",
             recipient.do_balance().await,
             faucet.do_balance().await
         );
-
-        // zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
-        //     .await
-        //     .unwrap();
-
-        // recipient.do_sync(true).await.unwrap();
-        // faucet.do_sync(true).await.unwrap();
-        // println!(
-        //     "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
-        //     recipient.do_balance().await,
-        //     faucet.do_balance().await
-        // );
-
-        let recipient_addr_uni = get_base_address!(recipient, "sapling");
-        let faucet_addr_uni = get_base_address!(faucet, "sapling");
 
         let mut address_amount_memo_tuples = vec![(recipient_addr_uni.as_str(), 1_000_000, None)];
         let mut proposal = faucet.do_propose(address_amount_memo_tuples.clone()).await;
         assert!(proposal.is_ok());
 
         println!(
-            "Grace Actions: {:#?}\nMarginal Fee: {:#?}\nTransaction Amount: {:#?}\nTotal Fee Required: {:#?}",
+            "Grace Actions: {:#?}\nMarginal Fee: {:#?}\nTransaction Amount: {:#?}\nTotal Fee Required: {:#?}\n",
             proposal.as_ref().unwrap().fee_rule().grace_actions(),
             proposal
                 .as_ref()
@@ -3764,40 +3746,57 @@ mod basic_transactions {
                 .fee_required()
                 .into_u64()
         );
+        println!("Payment Pools: {:#?}\nTransparent Inputs: {:#?}\nShielded Inputs: {:#?}\nPrior Step Inputs: {:#?}\nIs Shielding: {:#?}\n",
+            proposal
+                .as_ref()
+                .unwrap()
+                .steps()
+                .head
+                .payment_pools(), 
+            proposal
+                .as_ref()
+                .unwrap()
+                .steps()
+                .head
+                .transparent_inputs(), 
+            proposal
+            .as_ref()
+            .unwrap()
+            .steps()
+            .head.shielded_inputs().unwrap().notes().len(), 
+            proposal
+            .as_ref()
+            .unwrap()
+            .steps()
+            .head
+            .prior_step_inputs(), 
+            proposal
+            .as_ref()
+            .unwrap()
+            .steps()
+            .head
+            .is_shielding());
+        println!("Notes: {:#?}", proposal.as_ref().unwrap().steps().head.shielded_inputs().unwrap().notes());
 
-        let mut tx = faucet.do_send_proposal().await;
-        println!("Full Tx: {:#?}", tx.as_ref().unwrap());
-
+        faucet.do_send_proposal().await.unwrap();
         zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
             .await
             .unwrap();
-
+        
         recipient.do_sync(true).await.unwrap();
-        faucet.do_sync(true).await.unwrap(); //THIS CAUSES ERROR!
+        // faucet.do_sync(true).await.unwrap(); //THIS CAUSES ERROR!
         println!(
-            "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
+            "Recipient Balance: {:?}\n\nFaucet Balance: {:?}\n",
             recipient.do_balance().await,
             faucet.do_balance().await
         );
-
-        // zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
-        //     .await
-        //     .unwrap();
-
-        // recipient.do_sync(true).await.unwrap();
-        // faucet.do_sync(true).await.unwrap(); // THIS CAUSES ERROR!
-        // println!(
-        //     "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
-        //     recipient.do_balance().await,
-        //     faucet.do_balance().await
-        // );
 
         address_amount_memo_tuples = vec![(faucet_addr_uni.as_str(), 20_000, None)];
         proposal = recipient.do_propose(address_amount_memo_tuples).await;
         assert!(proposal.is_ok());
 
         println!(
-             "Grace Actions: {:#?}\nMarginal Fee: {:#?}\nTransaction Amount: {:#?}\nTotal Fee Required: {:#?}",
+             "Grace Actions: {:#?}\nMarginal Fee: {:#?}\nTransaction Amount: {:#?}\nTotal Fee Required: {:#?}\n",
              proposal.as_ref().unwrap().fee_rule().grace_actions(),
              proposal
                  .as_ref()
@@ -3825,23 +3824,50 @@ mod basic_transactions {
                  .fee_required()
                  .into_u64()
          );
+                 println!("Payment Pools: {:#?}\nTransparent Inputs: {:#?}\nShielded Inputs: {:#?}\nPrior Step Inputs: {:#?}\nIs Shielding: {:#?}\n",
+            proposal
+                .as_ref()
+                .unwrap()
+                .steps()
+                .head
+                .payment_pools(), 
+            proposal
+                .as_ref()
+                .unwrap()
+                .steps()
+                .head
+                .transparent_inputs(), 
+            proposal
+            .as_ref()
+            .unwrap()
+            .steps()
+            .head.shielded_inputs().unwrap().notes().len(), 
+            proposal
+            .as_ref()
+            .unwrap()
+            .steps()
+            .head
+            .prior_step_inputs(), 
+            proposal
+            .as_ref()
+            .unwrap()
+            .steps()
+            .head
+            .is_shielding());
+        println!("Notes: {:#?}", proposal.as_ref().unwrap().steps().head.shielded_inputs().unwrap().notes());
 
-        tx = recipient.do_send_proposal().await;
-        println!("Full Tx: {:#?}", tx.as_ref().unwrap());
+        recipient.do_send_proposal().await.unwrap();
+        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
+            .await
+            .unwrap();
 
-        recipient.do_sync(true).await.unwrap();
-        faucet.do_sync(true).await.unwrap(); // THIS CAUSES ERROR!
+        // recipient.do_sync(true).await.unwrap(); // THIS CAUSES ERROR!
+        // faucet.do_sync(true).await.unwrap(); // THIS CAUSES ERROR!
         println!(
-            "Recipient Balance: {:#?}\nFaucet Balance: {:#?}",
+            "Recipient Balance: {:?}\n\nFaucet Balance: {:?}\n",
             recipient.do_balance().await,
             faucet.do_balance().await
         );
-
-        // println!(
-        //     "Recipient Notes: {:#?}\nFaucet Notes: {:#?}",
-        //     recipient.do_list_txsummaries().await,
-        //     faucet.do_list_txsummaries().await
-        // );
     }
 
     // #[tokio::test]
