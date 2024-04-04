@@ -3704,8 +3704,12 @@ mod basic_transactions {
         let (regtest_manager, _cph, faucet, recipient) =
             scenarios::faucet_recipient_default().await;
 
-        let recipient_addr_uni = get_base_address!(recipient, "sapling");
-        let faucet_addr_uni = get_base_address!(faucet, "unified");
+        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 10)
+            .await
+            .unwrap();
+
+        let recipient_addr_ua = get_base_address!(recipient, "unified");
+        let faucet_addr_ua = get_base_address!(faucet, "unified");
 
         recipient.do_sync(true).await.unwrap();
         faucet.do_sync(true).await.unwrap();
@@ -3715,11 +3719,15 @@ mod basic_transactions {
             faucet.do_balance().await
         );
 
-        let mut address_amount_memo_tuples = vec![(recipient_addr_uni.as_str(), 1_000_000, None)];
+        let mut address_amount_memo_tuples = vec![(recipient_addr_ua.as_str(), 20_000, None)];
         let mut proposal = faucet.do_propose(address_amount_memo_tuples.clone()).await;
-        assert!(proposal.is_ok());
 
-        println!(
+        for _ in 0..10 {
+            address_amount_memo_tuples = vec![(recipient_addr_ua.as_str(), 60_000, None)];
+            proposal = faucet.do_propose(address_amount_memo_tuples.clone()).await;
+            assert!(proposal.is_ok());
+
+            println!(
             "Grace Actions: {:#?}\nMarginal Fee: {:#?}\nTransaction Amount: {:#?}\nTotal Fee Required: {:#?}\n",
             proposal.as_ref().unwrap().fee_rule().grace_actions(),
             proposal
@@ -3748,43 +3756,43 @@ mod basic_transactions {
                 .fee_required()
                 .into_u64()
         );
-        println!("Payment Pools: {:#?}\nTransparent Inputs: {:#?}\nShielded Inputs: {:#?}\nPrior Step Inputs: {:#?}\nIs Shielding: {:#?}\n",
+            println!("Payment Pools: {:#?}\nTransparent Inputs: {:#?}\nShielded Inputs: {:#?}\nPrior Step Inputs: {:#?}\nIs Shielding: {:#?}\n",
             proposal
                 .as_ref()
                 .unwrap()
                 .steps()
                 .head
-                .payment_pools(), 
+                .payment_pools(),
             proposal
                 .as_ref()
                 .unwrap()
                 .steps()
                 .head
-                .transparent_inputs(), 
+                .transparent_inputs(),
             proposal
             .as_ref()
             .unwrap()
             .steps()
-            .head.shielded_inputs().unwrap().notes().len(), 
+            .head.shielded_inputs().unwrap().notes().len(),
             proposal
             .as_ref()
             .unwrap()
             .steps()
             .head
-            .prior_step_inputs(), 
+            .prior_step_inputs(),
             proposal
             .as_ref()
             .unwrap()
             .steps()
             .head
             .is_shielding());
-        println!("Notes: {:#?}", proposal.as_ref().unwrap().steps().head.shielded_inputs().unwrap().notes());
-
-        faucet.do_send_proposal().await.unwrap();
-        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
+            // println!("Notes: {:#?}", proposal.as_ref().unwrap().steps().head.shielded_inputs().unwrap().notes());
+            faucet.do_send_proposal().await.unwrap();
+        }
+        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 10)
             .await
             .unwrap();
-        
+
         recipient.do_sync(true).await.unwrap();
         // faucet.do_sync(true).await.unwrap(); //THIS CAUSES ERROR!
         println!(
@@ -3793,9 +3801,9 @@ mod basic_transactions {
             faucet.do_balance().await
         );
 
-        address_amount_memo_tuples = vec![(faucet_addr_uni.as_str(), 20_000, None)];
+        address_amount_memo_tuples = vec![(faucet_addr_ua.as_str(), 50_000, None)];
         proposal = recipient.do_propose(address_amount_memo_tuples).await;
-        assert!(proposal.is_ok());
+        // assert!(proposal.is_ok());
 
         println!(
              "Grace Actions: {:#?}\nMarginal Fee: {:#?}\nTransaction Amount: {:#?}\nTotal Fee Required: {:#?}\n",
@@ -3826,43 +3834,44 @@ mod basic_transactions {
                  .fee_required()
                  .into_u64()
          );
-                 println!("Payment Pools: {:#?}\nTransparent Inputs: {:#?}\nShielded Inputs: {:#?}\nPrior Step Inputs: {:#?}\nIs Shielding: {:#?}\n",
+        println!("Payment Pools: {:#?}\nTransparent Inputs: {:#?}\nShielded Inputs: {:#?}\nPrior Step Inputs: {:#?}\nIs Shielding: {:#?}\n",
             proposal
                 .as_ref()
                 .unwrap()
                 .steps()
                 .head
-                .payment_pools(), 
+                .payment_pools(),
             proposal
                 .as_ref()
                 .unwrap()
                 .steps()
                 .head
-                .transparent_inputs(), 
+                .transparent_inputs(),
             proposal
             .as_ref()
             .unwrap()
             .steps()
-            .head.shielded_inputs().unwrap().notes().len(), 
+            .head.shielded_inputs().unwrap().notes().len(),
             proposal
             .as_ref()
             .unwrap()
             .steps()
             .head
-            .prior_step_inputs(), 
+            .prior_step_inputs(),
             proposal
             .as_ref()
             .unwrap()
             .steps()
             .head
             .is_shielding());
-        println!("Notes: {:#?}", proposal.as_ref().unwrap().steps().head.shielded_inputs().unwrap().notes());
+        // println!("Notes: {:#?}", proposal.as_ref().unwrap().steps().head.shielded_inputs().unwrap().notes());
+
+        assert!(proposal.is_ok());
 
         recipient.do_send_proposal().await.unwrap();
         zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
             .await
             .unwrap();
-
         // recipient.do_sync(true).await.unwrap(); // THIS CAUSES ERROR!
         // faucet.do_sync(true).await.unwrap(); // THIS CAUSES ERROR!
         println!(
