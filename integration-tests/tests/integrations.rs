@@ -3908,6 +3908,54 @@ mod basic_transactions {
 
     //     assert!(proposal.is_ok());
     // }
+
+    #[tokio::test]
+    async fn send_and_sync_with_multiple_notes_no_panic() {
+        let (regtest_manager, _cph, faucet, recipient) =
+            scenarios::faucet_recipient_default().await;
+
+        let recipient_addr_ua = get_base_address!(recipient, "unified");
+        let faucet_addr_ua = get_base_address!(faucet, "unified");
+
+        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 2)
+            .await
+            .unwrap();
+
+        recipient.do_sync(true).await.unwrap();
+        faucet.do_sync(true).await.unwrap();
+
+        let mut address_amount_memo_tuples = vec![(recipient_addr_ua.as_str(), 40_000, None)];
+
+        for _ in 0..2 {
+            faucet
+                .do_propose(address_amount_memo_tuples.clone())
+                .await
+                .unwrap();
+            faucet.do_send_proposal().await.unwrap();
+        }
+
+        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
+            .await
+            .unwrap();
+
+        recipient.do_sync(true).await.unwrap();
+        faucet.do_sync(true).await.unwrap();
+
+        address_amount_memo_tuples = vec![(faucet_addr_ua.as_str(), 50_000, None)];
+        recipient
+            .do_propose(address_amount_memo_tuples)
+            .await
+            .unwrap();
+
+        recipient.do_send_proposal().await.unwrap();
+
+        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
+            .await
+            .unwrap();
+
+        recipient.do_sync(true).await.unwrap();
+        faucet.do_sync(true).await.unwrap();
+    }
 }
 
 #[tokio::test]
