@@ -42,6 +42,7 @@ fn extract_value_as_u64(input: &JsonValue) -> u64 {
     let note = &input["value"].as_fixed_point_u64(0).unwrap();
     *note
 }
+
 fn check_expected_balance_with_fvks(
     fvks: &Vec<&Fvk>,
     balance: PoolBalances,
@@ -128,6 +129,7 @@ mod fast {
     use zingolib::wallet::WalletBase;
 
     use super::*;
+
     #[tokio::test]
     async fn utxos_are_not_prematurely_confirmed() {
         let (regtest_manager, _cph, faucet, recipient) =
@@ -159,6 +161,7 @@ mod fast {
         assert!(preshield_utxos[0].unconfirmed_spent.is_none());
         assert!(postshield_utxos[0].unconfirmed_spent.is_some());
     }
+
     #[tokio::test]
     async fn send_without_reorg_buffer_blocks_gives_correct_error() {
         let (_regtest_manager, _cph, faucet, mut recipient) =
@@ -641,6 +644,7 @@ mod fast {
         faucet.do_shield(&[Pool::Transparent], None).await.unwrap();
     }
 }
+
 mod slow {
     use zcash_primitives::consensus::NetworkConstants;
 
@@ -682,6 +686,7 @@ mod slow {
             JsonValue::from(recipient.do_list_txsummaries().await).pretty(4)
         );
     }
+
     #[tokio::test]
     async fn zero_value_change() {
         // 2. Send an incoming transaction to fill the wallet
@@ -724,6 +729,7 @@ mod slow {
 
         check_client_balances!(recipient, o: 0 s: 0 t: 0);
     }
+
     #[tokio::test]
     async fn witness_clearing() {
         let (regtest_manager, _cph, faucet, recipient, txids) =
@@ -898,6 +904,7 @@ mod slow {
             .unwrap()
             .contains(&position));
     }
+
     #[tokio::test]
     async fn verify_old_wallet_uses_server_height_in_send() {
         // An earlier version of zingolib used the _wallet's_ 'height' when
@@ -930,6 +937,7 @@ mod slow {
             .await
             .unwrap();
     }
+
     #[tokio::test]
     async fn test_scanning_in_watch_only_mode() {
         // # Scenario:
@@ -1044,6 +1052,7 @@ mod slow {
             );
         }
     }
+
     #[tokio::test]
     async fn t_incoming_t_outgoing_disallowed() {
         let (regtest_manager, _cph, faucet, recipient) =
@@ -1077,6 +1086,7 @@ mod slow {
             .unwrap_err();
         assert_eq!(sent_transaction_error, "Insufficient verified shielded funds. Have 0 zats, need 30000 zats. NOTE: funds need at least 1 confirmations before they can be spent. Transparent funds must be shielded before they can be spent. If you are trying to spend transparent funds, please use the shield button and try again in a few minutes.");
     }
+
     #[tokio::test]
     async fn shield_sapling() {
         let (regtest_manager, _cph, faucet, recipient) =
@@ -1201,6 +1211,7 @@ mod slow {
             .await
             .unwrap();
     }
+
     #[tokio::test]
     async fn shield_heartwood_sapling_funds() {
         let regtest_network = RegtestNetwork::new(1, 1, 1, 1, 3, 5);
@@ -1216,6 +1227,7 @@ mod slow {
             .unwrap();
         check_client_balances!(faucet, o: 3_499_990_000u64 s: 625_010_000 t: 0);
     }
+
     #[tokio::test]
     async fn sends_to_self_handle_balance_properly() {
         let transparent_funding = 100_000;
@@ -1275,6 +1287,7 @@ mod slow {
             .pretty(2)
         );
     }
+
     #[tokio::test]
     async fn send_to_ua_saves_full_ua_in_wallet() {
         let (regtest_manager, _cph, faucet, recipient) =
@@ -1318,6 +1331,7 @@ mod slow {
             json::stringify_pretty(new_list.clone(), 4)
         );
     }
+
     #[tokio::test]
     async fn send_to_transparent_and_sapling_maintain_balance() {
         let recipient_initial_funds = 100_000_000;
@@ -1595,6 +1609,7 @@ mod slow {
             );
         }
     }
+
     #[tokio::test]
     async fn send_orchard_back_and_forth() {
         // setup
@@ -1669,6 +1684,7 @@ mod slow {
         );
         check_client_balances!(recipient, o: recipient_final_orch s: 0 t: 0);
     }
+
     #[tokio::test]
     async fn send_mined_sapling_to_orchard() {
         // This test shows a confirmation changing the state of balance by
@@ -1699,6 +1715,7 @@ mod slow {
             625_000_000 - u64::from(MINIMUM_FEE)
         );
     }
+
     #[tokio::test]
     async fn send_heartwood_sapling_funds() {
         let regtest_network = RegtestNetwork::new(1, 1, 1, 1, 3, 5);
@@ -1722,6 +1739,7 @@ mod slow {
             .unwrap();
         check_client_balances!(recipient, o: 3_499_990_000u64 s: 0 t: 0);
     }
+
     #[tokio::test]
     async fn send_funds_to_all_pools() {
         let regtest_network = RegtestNetwork::all_upgrades_active();
@@ -1743,6 +1761,7 @@ mod slow {
         .await;
         check_client_balances!(recipient, o: 100_000 s: 100_000 t: 100_000);
     }
+
     #[tokio::test]
     async fn self_send_to_t_displays_as_one_transaction() {
         let (regtest_manager, _cph, faucet, recipient) =
@@ -1814,6 +1833,7 @@ mod slow {
             .map(|transaction| transaction["txid"].as_str());
         assert!(itertools::Itertools::all_unique(&mut txids));
     }
+
     #[tokio::test]
     async fn sapling_to_sapling_scan_together() {
         // Create an incoming transaction, and then send that transaction, and scan everything together, to make sure it works.
@@ -1886,6 +1906,7 @@ mod slow {
             spent_value
         );
     }
+
     #[tokio::test]
     async fn sapling_incoming_sapling_outgoing() {
         let (regtest_manager, _cph, faucet, recipient) =
@@ -2081,6 +2102,7 @@ mod slow {
             5
         );
     }
+
     #[tokio::test]
     async fn sapling_dust_fee_collection() {
         let (regtest_manager, __cph, faucet, recipient) =
@@ -2125,6 +2147,7 @@ mod slow {
         let remaining_orchard = for_orchard - (6 * fee);
         check_client_balances!(recipient, o: remaining_orchard s: for_sapling t: 0);
     }
+
     #[tokio::test]
     async fn sandblast_filter_preserves_trees() {
         let (ref regtest_manager, _cph, ref faucet, ref recipient, _txids) =
@@ -2188,6 +2211,7 @@ mod slow {
                 .max_leaf_position(0)
         );
     }
+
     #[tokio::test]
     async fn rescan_still_have_outgoing_metadata_with_sends_to_self() {
         let (regtest_manager, _cph, faucet) = scenarios::faucet_default().await;
@@ -2236,6 +2260,7 @@ mod slow {
             assert_eq!(field.len(), post_rescan_notes[field_name].len());
         }
     }
+
     #[tokio::test]
     async fn rescan_still_have_outgoing_metadata() {
         let (regtest_manager, _cph, faucet, recipient) =
@@ -2256,6 +2281,7 @@ mod slow {
         let post_rescan_transactions = faucet.do_list_transactions().await;
         assert_eq!(transactions, post_rescan_transactions);
     }
+
     #[tokio::test]
     async fn note_selection_order() {
         // In order to fund a transaction multiple notes may be selected and consumed.
@@ -2370,6 +2396,7 @@ mod slow {
 
         // More explicit than ignoring the unused variable, we only care about this in order to drop it
     }
+
     #[tokio::test]
     async fn multiple_outgoing_metadatas_work_right_on_restore() {
         let inital_value = 100_000;
@@ -2401,6 +2428,7 @@ mod slow {
         // The two outgoing spends were identical. They should be represented as such
         assert_eq!(outgoing_metadata.next(), outgoing_metadata.next());
     }
+
     #[tokio::test]
     async fn mempool_clearing_and_full_batch_syncs_correct_trees() {
         async fn do_maybe_recent_txid(lc: &LightClient) -> JsonValue {
@@ -2689,6 +2717,7 @@ mod slow {
                 .unwrap()
         )
     }
+
     #[tokio::test]
     async fn mempool_and_balance() {
         let value = 100_000;
@@ -2742,6 +2771,7 @@ mod slow {
         assert_eq!(bal.verified_orchard_balance.unwrap(), new_bal);
         assert_eq!(bal.unverified_orchard_balance.unwrap(), 0);
     }
+
     #[tokio::test]
     async fn load_old_wallet_at_reorged_height() {
         let regtest_network = RegtestNetwork::all_upgrades_active();
@@ -2890,6 +2920,7 @@ mod slow {
             .await
             .unwrap();
     }
+
     /// An arbitrary number of diversified addresses may be generated
     /// from a seed.  If the wallet is subsequently lost-or-destroyed
     /// wallet-regeneration-from-seed (sprouting) doesn't regenerate
@@ -3016,6 +3047,7 @@ mod slow {
         };
         assert_eq!(seed_of_recipient, seed_of_recipient_restored);
     }
+
     #[tokio::test]
     async fn from_t_z_o_tz_to_zo_tzo_to_orchard() {
         // Test all possible promoting note source combinations
@@ -3161,6 +3193,7 @@ mod slow {
         );
         assert!(total_value_to_addrs_iter.next().is_none());
     }
+
     #[tokio::test]
     async fn factor_do_shield_to_call_do_send() {
         let (regtest_manager, __cph, faucet, recipient) =
@@ -3177,6 +3210,7 @@ mod slow {
             .await
             .unwrap();
     }
+
     #[tokio::test]
     async fn dust_sends_change_correctly() {
         let (regtest_manager, _cph, faucet, recipient, _txids) =
@@ -3203,6 +3237,7 @@ mod slow {
             serde_json::to_string_pretty(&recipient.do_balance().await).unwrap()
         );
     }
+
     #[tokio::test]
     async fn dont_write_unconfirmed() {
         let regtest_network = RegtestNetwork::all_upgrades_active();
@@ -3264,6 +3299,7 @@ mod slow {
         assert_eq!(loaded_balance.unverified_orchard_balance, Some(0),);
         check_client_balances!(loaded_client, o: 100_000 s: 0 t: 0 );
     }
+
     #[tokio::test]
     async fn by_address_finsight() {
         let (regtest_manager, _cph, faucet, recipient) =
@@ -3313,6 +3349,7 @@ mod slow {
             "6".to_string()
         );
     }
+
     #[tokio::test]
     async fn aborted_resync() {
         let (regtest_manager, _cph, faucet, recipient, _txids) =
@@ -3414,6 +3451,7 @@ mod slow {
         assert_eq!(list_before, list_after);
         assert_eq!(witness_before.unwrap(), witness_after.unwrap());
     }
+
     #[tokio::test]
     async fn mempool_spends_correctly_marked_unconfirmed_spent() {
         let (_regtest_manager, _cph, _faucet, recipient, _txids) =
@@ -3442,6 +3480,7 @@ mod slow {
             Some(890_000)
         );
     }
+
     #[tokio::test]
     async fn timed_sync_interrupt() {
         let (regtest_manager, _cph, faucet, recipient) =
@@ -3509,6 +3548,7 @@ mod slow {
 
         assert_eq!(bala_sim, bala_syn);
     }
+
     async fn load_wallet_from_data_and_assert(
         data: &[u8],
         expected_balance: u64,
@@ -3700,6 +3740,54 @@ mod basic_transactions {
     }
 
     #[tokio::test]
+    async fn send_and_sync_with_multiple_notes_no_panic() {
+        let (regtest_manager, _cph, faucet, recipient) =
+            scenarios::faucet_recipient_default().await;
+
+        let recipient_addr_ua = get_base_address!(recipient, "unified");
+        let faucet_addr_ua = get_base_address!(faucet, "unified");
+
+        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 2)
+            .await
+            .unwrap();
+
+        recipient.do_sync(true).await.unwrap();
+        faucet.do_sync(true).await.unwrap();
+
+        let mut address_amount_memo_tuples = vec![(recipient_addr_ua.as_str(), 40_000, None)];
+
+        for _ in 0..2 {
+            faucet
+                .do_propose(address_amount_memo_tuples.clone())
+                .await
+                .unwrap();
+            faucet.do_send_proposal().await.unwrap();
+        }
+
+        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
+            .await
+            .unwrap();
+
+        recipient.do_sync(true).await.unwrap();
+        faucet.do_sync(true).await.unwrap();
+
+        address_amount_memo_tuples = vec![(faucet_addr_ua.as_str(), 50_000, None)];
+        recipient
+            .do_propose(address_amount_memo_tuples)
+            .await
+            .unwrap();
+
+        recipient.do_send_proposal().await.unwrap();
+
+        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
+            .await
+            .unwrap();
+
+        recipient.do_sync(true).await.unwrap();
+        faucet.do_sync(true).await.unwrap();
+    }
+
+    #[tokio::test]
     async fn standard_proposal_fee() {
         let (regtest_manager, _cph, faucet, recipient) =
             scenarios::faucet_recipient_default().await;
@@ -3882,80 +3970,12 @@ mod basic_transactions {
     }
 
     // #[tokio::test]
-    // async fn dust_proposal() {
-    //     let (_regtest_manager, _cph, faucet, recipient) =
-    //         scenarios::faucet_recipient_default().await;
-
-    //     let addr = get_base_address!(recipient, "unified");
-
-    //     let address_amount_memo_tuples = vec![(addr.as_str(), 20_000, None)];
-
-    //     let proposal = faucet.do_propose(address_amount_memo_tuples).await;
-
-    //     assert!(proposal.is_ok());
+    // async fn dust_proposal_fee() {
     // }
 
     // #[tokio::test]
-    // async fn transparent_proposal() {
-    //     let (_regtest_manager, _cph, faucet, recipient) =
-    //         scenarios::faucet_recipient_default().await;
-
-    //     let addr = get_base_address!(recipient, "transparent");
-
-    //     let address_amount_memo_tuples = vec![(addr.as_str(), 20_000, None)];
-
-    //     let proposal = faucet.do_propose(address_amount_memo_tuples).await;
-
-    //     assert!(proposal.is_ok());
+    // async fn transparent_proposal_fee() {
     // }
-
-    #[tokio::test]
-    async fn send_and_sync_with_multiple_notes_no_panic() {
-        let (regtest_manager, _cph, faucet, recipient) =
-            scenarios::faucet_recipient_default().await;
-
-        let recipient_addr_ua = get_base_address!(recipient, "unified");
-        let faucet_addr_ua = get_base_address!(faucet, "unified");
-
-        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 2)
-            .await
-            .unwrap();
-
-        recipient.do_sync(true).await.unwrap();
-        faucet.do_sync(true).await.unwrap();
-
-        let mut address_amount_memo_tuples = vec![(recipient_addr_ua.as_str(), 40_000, None)];
-
-        for _ in 0..2 {
-            faucet
-                .do_propose(address_amount_memo_tuples.clone())
-                .await
-                .unwrap();
-            faucet.do_send_proposal().await.unwrap();
-        }
-
-        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
-            .await
-            .unwrap();
-
-        recipient.do_sync(true).await.unwrap();
-        faucet.do_sync(true).await.unwrap();
-
-        address_amount_memo_tuples = vec![(faucet_addr_ua.as_str(), 50_000, None)];
-        recipient
-            .do_propose(address_amount_memo_tuples)
-            .await
-            .unwrap();
-
-        recipient.do_send_proposal().await.unwrap();
-
-        zingo_testutils::generate_n_blocks_return_new_height(&regtest_manager, 1)
-            .await
-            .unwrap();
-
-        recipient.do_sync(true).await.unwrap();
-        faucet.do_sync(true).await.unwrap();
-    }
 }
 
 #[tokio::test]
