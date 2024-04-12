@@ -36,6 +36,11 @@ impl std::ops::DerefMut for TransactionRecordsById {
         &mut self.0
     }
 }
+impl Default for TransactionRecordsById {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl TransactionRecordsById {
     // initializers
 
