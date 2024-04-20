@@ -1,18 +1,12 @@
 //! Functionality for managing transactions
 
-use secrecy::SecretVec;
-use shardtree::store::ShardStore;
-use zcash_client_backend::{
-    data_api::{Account, WalletRead},
-    keys::UnifiedFullViewingKey,
-};
-use zcash_primitives::consensus::BlockHeight;
-use zip32::AccountId;
-
 use crate::{
     error::ZingoLibError,
     wallet::{data::WitnessTrees, transaction_records_by_id::TransactionRecordsById},
 };
+use shardtree::store::ShardStore as _;
+use zcash_client_backend::{data_api::WalletRead, keys::UnifiedFullViewingKey};
+use zcash_primitives::consensus::BlockHeight;
 
 /// HashMap of all transactions in a wallet, keyed by txid.
 /// Note that the parent is expected to hold a RwLock, so we will assume that all accesses to
@@ -51,36 +45,19 @@ impl TxMapAndMaybeTrees {
     }
 }
 
-pub struct ZingoAccount(AccountId, UnifiedFullViewingKey);
-
-impl Account<AccountId> for ZingoAccount {
-    fn id(&self) -> AccountId {
-        self.0
-    }
-
-    fn source(&self) -> zcash_client_backend::data_api::AccountSource {
-        unimplemented!()
-    }
-
-    fn ufvk(&self) -> Option<&UnifiedFullViewingKey> {
-        Some(&self.1)
-    }
-
-    fn uivk(&self) -> zcash_keys::keys::UnifiedIncomingViewingKey {
-        unimplemented!()
-    }
-}
-
 impl WalletRead for TxMapAndMaybeTrees {
-    type Error = ZingoLibError;
-    type AccountId = AccountId;
-    type Account = ZingoAccount;
+    type Error = crate::error::ZingoLibError;
+    type AccountId = zip32::AccountId;
+    type Account = zingo_account::ZingoAccount;
 
     fn get_account_for_ufvk(
         &self,
         ufvk: &UnifiedFullViewingKey,
     ) -> Result<Option<Self::Account>, Self::Error> {
-        Ok(Some(ZingoAccount(AccountId::ZERO, ufvk.clone())))
+        Ok(Some(zingo_account::ZingoAccount(
+            zip32::AccountId::ZERO,
+            ufvk.clone(),
+        )))
     }
 
     fn get_target_and_anchor_heights(
@@ -165,7 +142,7 @@ impl WalletRead for TxMapAndMaybeTrees {
     fn validate_seed(
         &self,
         _account_id: Self::AccountId,
-        _seed: &SecretVec<u8>,
+        _seed: &secrecy::SecretVec<u8>,
     ) -> Result<bool, Self::Error> {
         unimplemented!()
     }
@@ -269,7 +246,7 @@ impl WalletRead for TxMapAndMaybeTrees {
     }
     fn seed_relevance_to_derived_accounts(
         &self,
-        _seed: &SecretVec<u8>,
+        _seed: &secrecy::SecretVec<u8>,
     ) -> Result<zcash_client_backend::data_api::SeedRelevance<Self::AccountId>, Self::Error> {
         unimplemented!()
     }

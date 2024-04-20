@@ -1,14 +1,22 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+pub struct ZingoAccount(
+    pub zip32::AccountId,
+    pub zcash_keys::keys::UnifiedFullViewingKey,
+);
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+impl zcash_client_backend::data_api::Account<zip32::AccountId> for ZingoAccount {
+    fn id(&self) -> zip32::AccountId {
+        self.0
+    }
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    fn source(&self) -> zcash_client_backend::data_api::AccountSource {
+        unimplemented!()
+    }
+
+    fn ufvk(&self) -> Option<&zcash_keys::keys::UnifiedFullViewingKey> {
+        Some(&self.1)
+    }
+
+    fn uivk(&self) -> zcash_keys::keys::UnifiedIncomingViewingKey {
+        unimplemented!()
     }
 }
