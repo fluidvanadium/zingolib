@@ -51,6 +51,7 @@ impl TxMapAndMaybeTrees {
     }
 }
 
+/// This is a facade for using LRZ traits. In actuality, Zingo does not use multiple accounts in one wallet.
 pub struct ZingoAccount(AccountId, UnifiedFullViewingKey);
 
 impl Account<AccountId> for ZingoAccount {
