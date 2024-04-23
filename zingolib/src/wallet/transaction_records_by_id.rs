@@ -283,6 +283,16 @@ pub mod trait_inputsource {
 
     #[cfg(test)]
     mod tests {
+        use zcash_client_backend::{
+            data_api::{InputSource, SpendableNotes},
+            ShieldedProtocol,
+        };
+        use zcash_primitives::{
+            consensus::BlockHeight, legacy::TransparentAddress,
+            transaction::components::amount::NonNegativeAmount,
+        };
+        use zip32::AccountId;
+
         use crate::wallet::{
             notes::{
                 sapling::mocks::SaplingNoteBuilder, transparent::mocks::TransparentOutputBuilder,
@@ -292,17 +302,6 @@ pub mod trait_inputsource {
         };
 
         use super::TransactionRecordsById;
-
-        use zcash_client_backend::{
-            data_api::{InputSource, SpendableNotes},
-            ShieldedProtocol,
-        };
-        use zcash_primitives::{
-            consensus::BlockHeight, legacy::TransparentAddress,
-            transaction::components::amount::NonNegativeAmount,
-        };
-        use zingo_status::confirmation_status::ConfirmationStatus::Confirmed;
-        use zip32::AccountId;
 
         #[test]
         fn sapling_note_is_selected() {
@@ -783,26 +782,15 @@ impl Default for TransactionRecordsById {
 
 #[cfg(test)]
 mod tests {
+    use zcash_primitives::consensus::BlockHeight;
+    use zingo_status::confirmation_status::ConfirmationStatus::Confirmed;
+
     use crate::wallet::{
-        notes::{
-            sapling::mocks::SaplingNoteBuilder, transparent::mocks::TransparentOutputBuilder,
-            ShNoteId,
-        },
+        notes::{sapling::mocks::SaplingNoteBuilder, transparent::mocks::TransparentOutputBuilder},
         transaction_record::mocks::TransactionRecordBuilder,
     };
 
     use super::TransactionRecordsById;
-
-    use zcash_client_backend::{
-        data_api::{InputSource, SpendableNotes},
-        ShieldedProtocol,
-    };
-    use zcash_primitives::{
-        consensus::BlockHeight, legacy::TransparentAddress,
-        transaction::components::amount::NonNegativeAmount,
-    };
-    use zingo_status::confirmation_status::ConfirmationStatus::Confirmed;
-    use zip32::AccountId;
 
     #[test]
     fn invalidated_note_is_deleted() {
