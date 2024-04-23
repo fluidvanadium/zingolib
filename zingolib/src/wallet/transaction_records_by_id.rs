@@ -1,30 +1,19 @@
 //! The lookup for transaction id indexed data.  Currently this provides the
 //! transaction record.
 
-use crate::{
-    error::{ZingoLibError, ZingoLibResult},
-    wallet::{
-        notes::{interface::ShieldedNoteInterface, OutputInterface as _, ShNoteId},
-        traits::{DomainWalletExt, Recipient},
-        transaction_record::TransactionRecord,
-    },
-};
 use std::collections::HashMap;
 
 use orchard::note_encryption::OrchardDomain;
 use sapling_crypto::note_encryption::SaplingDomain;
-use zcash_client_backend::data_api::{InputSource, SpendableNotes};
-use zcash_client_backend::wallet::{ReceivedNote, WalletTransparentOutput};
-use zcash_client_backend::ShieldedProtocol;
-use zcash_primitives::legacy::Script;
-use zcash_primitives::transaction::components::amount::NonNegativeAmount;
-use zcash_primitives::transaction::components::TxOut;
-
 use zcash_note_encryption::Domain;
 use zcash_primitives::consensus::BlockHeight;
-
 use zcash_primitives::transaction::TxId;
-use zip32::AccountId;
+
+use crate::wallet::{
+    notes::{interface::ShieldedNoteInterface, OutputInterface, ShNoteId},
+    traits::{DomainWalletExt, Recipient},
+    transaction_record::TransactionRecord,
+};
 
 /// A convenience wrapper, to impl behavior on.
 #[derive(Debug)]
@@ -57,18 +46,6 @@ impl TransactionRecordsById {
 }
 
 pub mod trait_inputsource {
-    use super::TransactionRecordsById;
-
-    use crate::{
-        error::{ZingoLibError, ZingoLibResult},
-        wallet::{
-            notes::{interface::ShieldedNoteInterface, OutputInterface as _, ShNoteId},
-            traits::{DomainWalletExt, Recipient},
-            transaction_record::TransactionRecord,
-        },
-    };
-    use std::collections::HashMap;
-
     use orchard::note_encryption::OrchardDomain;
     use sapling_crypto::note_encryption::SaplingDomain;
     use zcash_client_backend::data_api::{InputSource, SpendableNotes};
@@ -77,12 +54,14 @@ pub mod trait_inputsource {
     use zcash_primitives::legacy::Script;
     use zcash_primitives::transaction::components::amount::NonNegativeAmount;
     use zcash_primitives::transaction::components::TxOut;
-
-    use zcash_note_encryption::Domain;
-    use zcash_primitives::consensus::BlockHeight;
-
-    use zcash_primitives::transaction::TxId;
     use zip32::AccountId;
+
+    use crate::{
+        error::{ZingoLibError, ZingoLibResult},
+        wallet::notes::ShNoteId,
+    };
+
+    use super::TransactionRecordsById;
 
     impl InputSource for TransactionRecordsById {
         type Error = ZingoLibError;
