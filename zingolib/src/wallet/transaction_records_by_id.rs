@@ -280,6 +280,86 @@ pub mod trait_inputsource {
                 .collect()
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+        use crate::wallet::{
+            notes::{
+                sapling::mocks::SaplingNoteBuilder, transparent::mocks::TransparentOutputBuilder,
+                ShNoteId,
+            },
+            transaction_record::mocks::TransactionRecordBuilder,
+        };
+
+        use super::TransactionRecordsById;
+
+        use zcash_client_backend::{
+            data_api::{InputSource, SpendableNotes},
+            ShieldedProtocol,
+        };
+        use zcash_primitives::{
+            consensus::BlockHeight, legacy::TransparentAddress,
+            transaction::components::amount::NonNegativeAmount,
+        };
+        use zingo_status::confirmation_status::ConfirmationStatus::Confirmed;
+        use zip32::AccountId;
+
+        #[test]
+        fn sapling_note_is_selected() {
+            // WIP
+            let mut transaction_record = TransactionRecordBuilder::default().build();
+            transaction_record
+                .sapling_notes
+                .push(SaplingNoteBuilder::default().build());
+
+            let mut transaction_records_by_id = TransactionRecordsById::new();
+            transaction_records_by_id.insert(transaction_record.txid, transaction_record);
+
+            let target_value = NonNegativeAmount::const_from_u64(20000);
+            let anchor_height: BlockHeight = 10.into();
+            let spendable_notes: SpendableNotes<ShNoteId> =
+                zcash_client_backend::data_api::InputSource::select_spendable_notes(
+                    &transaction_records_by_id,
+                    AccountId::ZERO,
+                    target_value,
+                    &[ShieldedProtocol::Sapling, ShieldedProtocol::Orchard],
+                    anchor_height,
+                    &[],
+                )
+                .unwrap();
+            assert_eq!(
+                spendable_notes
+                    .sapling()
+                    .first()
+                    .unwrap()
+                    .note()
+                    .value()
+                    .inner(),
+                // Default mock sapling note value
+                1_000_000
+            )
+        }
+
+        #[test]
+        fn select_transparent_outputs() {
+            let mut transaction_record = TransactionRecordBuilder::default().build();
+            let transparent_output = TransparentOutputBuilder::default().build();
+            transaction_record
+                .transparent_outputs
+                .push(transparent_output);
+            let mut transaction_records_by_id = TransactionRecordsById::new();
+            transaction_records_by_id.insert_transaction_record(transaction_record);
+
+            let selected_outputs = transaction_records_by_id
+                .get_unspent_transparent_outputs(
+                    &TransparentAddress::ScriptHash([0; 20]),
+                    BlockHeight::from_u32(10),
+                    &[],
+                )
+                .unwrap();
+            dbg!(selected_outputs);
+        }
+    }
 }
 
 /// Methods to query and modify the map.
@@ -751,60 +831,5 @@ mod tests {
         transaction_records_by_id.invalidate_all_transactions_after_or_at_height(reorg_height);
 
         assert_eq!(transaction_records_by_id.len(), 1);
-    }
-    #[test]
-    fn sapling_note_is_selected() {
-        // WIP
-        let mut transaction_record = TransactionRecordBuilder::default().build();
-        transaction_record
-            .sapling_notes
-            .push(SaplingNoteBuilder::default().build());
-
-        let mut transaction_records_by_id = TransactionRecordsById::new();
-        transaction_records_by_id.insert(transaction_record.txid, transaction_record);
-
-        let target_value = NonNegativeAmount::const_from_u64(20000);
-        let anchor_height: BlockHeight = 10.into();
-        let spendable_notes: SpendableNotes<ShNoteId> =
-            zcash_client_backend::data_api::InputSource::select_spendable_notes(
-                &transaction_records_by_id,
-                AccountId::ZERO,
-                target_value,
-                &[ShieldedProtocol::Sapling, ShieldedProtocol::Orchard],
-                anchor_height,
-                &[],
-            )
-            .unwrap();
-        assert_eq!(
-            spendable_notes
-                .sapling()
-                .first()
-                .unwrap()
-                .note()
-                .value()
-                .inner(),
-            // Default mock sapling note value
-            1_000_000
-        )
-    }
-
-    #[test]
-    fn select_transparent_outputs() {
-        let mut transaction_record = TransactionRecordBuilder::default().build();
-        let transparent_output = TransparentOutputBuilder::default().build();
-        transaction_record
-            .transparent_outputs
-            .push(transparent_output);
-        let mut transaction_records_by_id = TransactionRecordsById::new();
-        transaction_records_by_id.insert_transaction_record(transaction_record);
-
-        let selected_outputs = transaction_records_by_id
-            .get_unspent_transparent_outputs(
-                &TransparentAddress::ScriptHash([0; 20]),
-                BlockHeight::from_u32(10),
-                &[],
-            )
-            .unwrap();
-        dbg!(selected_outputs);
     }
 }
