@@ -352,7 +352,9 @@ mod tests {
         let transaction_records_and_maybe_trees = TxMapAndMaybeTrees::new_with_witness_trees();
         assert_eq!(
             transaction_records_and_maybe_trees
-                .get_target_and_anchor_heights(NonZeroU32::new(10).unwrap())
+                .get_target_and_anchor_heights(
+                    NonZeroU32::new(zingoconfig::MINIMUM_CONFIRMATIONS).unwrap()
+                )
                 .unwrap(),
             None
         );
@@ -363,7 +365,9 @@ mod tests {
         let transaction_records_and_maybe_trees = TxMapAndMaybeTrees::new_treeless();
         assert_eq!(
             transaction_records_and_maybe_trees
-                .get_target_and_anchor_heights(NonZeroU32::new(10).unwrap())
+                .get_target_and_anchor_heights(
+                    NonZeroU32::new(zingoconfig::MINIMUM_CONFIRMATIONS).unwrap()
+                )
                 .err()
                 .unwrap(),
             WalletReadError::NoSpendCapability
