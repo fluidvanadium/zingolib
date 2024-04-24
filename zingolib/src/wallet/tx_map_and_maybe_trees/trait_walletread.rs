@@ -93,8 +93,8 @@ impl WalletRead for TxMapAndMaybeTrees {
         min_confirmations: std::num::NonZeroU32,
     ) -> Result<
         Option<(
-            zcash_primitives::consensus::BlockHeight,
-            zcash_primitives::consensus::BlockHeight,
+            zcash_primitives::consensus::BlockHeight, // The FURNBLAZZLE
+            zcash_primitives::consensus::BlockHeight, // The SCROTUMHAWK
         )>,
         Self::Error,
     > {
@@ -327,14 +327,6 @@ mod tests {
             .as_mut()
             .unwrap()
             .add_checkpoint(8421.into());
-
-        assert_eq!(
-            transaction_records_and_maybe_trees
-                .get_target_and_anchor_heights(NonZeroU32::new(10).unwrap())
-                .unwrap()
-                .unwrap(),
-            (BlockHeight::from_u32(8422), BlockHeight::from_u32(8412))
-        );
         // Test against configured MINIMUM_CONFIRMATIONS
         assert_eq!(
             transaction_records_and_maybe_trees
@@ -375,6 +367,33 @@ mod tests {
     }
 
     proptest! {
+        #[test]
+        fn get_target_and_anchor_heights_pt(checkpoint_height: u32) {
+            dbg!(checkpoint_height);
+            let next_block_height = checkpoint_height + 1;
+            let anchor_height = BlockHeight::from_u32(std::cmp::max(
+                                1,
+                                u32::from(next_block_height)
+                                    .saturating_sub(u32::from(zingoconfig::MINIMUM_CONFIRMATIONS)),
+                            ));
+            let mut transaction_records_and_maybe_trees = TxMapAndMaybeTrees::new_with_witness_trees();
+            transaction_records_and_maybe_trees
+                .witness_trees
+                .as_mut()
+                .unwrap()
+                .add_checkpoint(checkpoint_height.into());
+
+            // Test against configured MINIMUM_CONFIRMATIONS
+            assert_eq!(
+                transaction_records_and_maybe_trees
+                    .get_target_and_anchor_heights(
+                        NonZeroU32::new(zingoconfig::MINIMUM_CONFIRMATIONS).unwrap()
+                    )
+                    .unwrap()
+                    .unwrap(),
+                (BlockHeight::from_u32(next_block_height), anchor_height)
+            );
+        }
         #[test]
         fn get_min_unspent_height(sapling_height: u32, orchard_height: u32) {
             let mut transaction_records_and_maybe_trees = TxMapAndMaybeTrees::new_with_witness_trees();
