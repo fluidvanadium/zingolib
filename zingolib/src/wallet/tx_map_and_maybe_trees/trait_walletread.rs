@@ -335,7 +335,7 @@ mod tests {
                 )
                 .unwrap()
                 .unwrap(),
-            (BlockHeight::from_u32(8422), BlockHeight::from_u32(8421))
+            (BlockHeight::from_u32(8422), BlockHeight::from_u32(8421)) // This test will fail if MIN_CONF changes value. Good.
         );
     }
 
