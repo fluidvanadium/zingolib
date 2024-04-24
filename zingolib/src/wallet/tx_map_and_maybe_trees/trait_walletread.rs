@@ -305,6 +305,16 @@ mod tests {
                 .unwrap(),
             (BlockHeight::from_u32(8422), BlockHeight::from_u32(8412))
         );
+        // Test against configured MINIMUM_CONFIRMATIONS
+        assert_eq!(
+            transaction_records_and_maybe_trees
+                .get_target_and_anchor_heights(
+                    NonZeroU32::new(zingoconfig::MINIMUM_CONFIRMATIONS).unwrap()
+                )
+                .unwrap()
+                .unwrap(),
+            (BlockHeight::from_u32(8422), BlockHeight::from_u32(8421))
+        );
     }
 
     proptest! {

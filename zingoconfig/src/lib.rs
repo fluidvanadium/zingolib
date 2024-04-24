@@ -39,6 +39,9 @@ pub const DEFAULT_WALLET_NAME: &str = "zingo-wallet.dat";
 pub const DEFAULT_LOGFILE_NAME: &str = "zingo-wallet.debug.log";
 /// TODO: Add Doc Comment Here!
 pub const REORG_BUFFER_OFFSET: u32 = 0;
+/// LRZ zcash_client_backend refers to "minimum_confirmations":
+/// [`zinglib::wallet::tx_map_and_maybe_trees::trait_walletread::WalletRead::get_target_and_anchor_heights`]
+pub const MINIMUM_CONFIRMATIONS: u32 = REORG_BUFFER_OFFSET + 1u32;
 /// TODO: Add Doc Comment Here!
 pub const BATCH_SIZE: u64 = 100;
 
