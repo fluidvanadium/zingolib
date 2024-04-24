@@ -367,9 +367,11 @@ mod tests {
     }
 
     proptest! {
+        // Test against a range of checkpoint_heights
+        // this test is incorrect if the std::cmp::max clause
+        // extracted from the implementation is incorrect
         #[test]
         fn get_target_and_anchor_heights_pt(checkpoint_height: u32) {
-            dbg!(checkpoint_height);
             let next_block_height = checkpoint_height + 1;
             let anchor_height = BlockHeight::from_u32(std::cmp::max(
                                 1,
