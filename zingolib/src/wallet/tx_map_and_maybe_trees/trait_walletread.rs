@@ -93,8 +93,8 @@ impl WalletRead for TxMapAndMaybeTrees {
         min_confirmations: std::num::NonZeroU32,
     ) -> Result<
         Option<(
-            zcash_primitives::consensus::BlockHeight, // The FURNBLAZZLE
-            zcash_primitives::consensus::BlockHeight, // The SCROTUMHAWK
+            zcash_primitives::consensus::BlockHeight, // The target
+            zcash_primitives::consensus::BlockHeight, // The anchor_height
         )>,
         Self::Error,
     > {
