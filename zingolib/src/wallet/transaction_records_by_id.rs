@@ -1,6 +1,11 @@
-//! TODO: Add Mod Discription Here!
+//! The lookup for transaction id indexed data.  Currently this provides the
+//! transaction record.
 
-use crate::wallet::notes::interface::ShieldedNoteInterface;
+use crate::wallet::{
+    notes::{interface::ShieldedNoteInterface, OutputInterface as _, ShNoteId},
+    traits::{DomainWalletExt, Recipient},
+    transaction_record::TransactionRecord,
+};
 use std::collections::HashMap;
 
 use orchard::note_encryption::OrchardDomain;
@@ -11,12 +16,9 @@ use zcash_primitives::consensus::BlockHeight;
 
 use zcash_primitives::transaction::TxId;
 
-use crate::wallet::{
-    data::TransactionRecord,
-    notes::OutputInterface,
-    traits::{DomainWalletExt, Recipient},
-};
+mod input_source;
 
+/// A convenience wrapper, to impl behavior on.
 #[derive(Debug)]
 pub struct TransactionRecordsById(pub HashMap<TxId, TransactionRecord>);
 
@@ -40,11 +42,44 @@ impl TransactionRecordsById {
     pub fn new() -> Self {
         TransactionRecordsById(HashMap::new())
     }
-    // Constructs a TransactionRecordMap from a HashMap
+    /// Constructs a TransactionRecordsById from a HashMap
     pub fn from_map(map: HashMap<TxId, TransactionRecord>) -> Self {
         TransactionRecordsById(map)
     }
 }
+
+/// Methods to query the map.
+impl TransactionRecordsById {
+    // loosely organized from least specific query to most specific query
+    pub fn total_funds_spent_in(&self, txid: &TxId) -> u64 {
+        self.get(txid)
+            .map(TransactionRecord::total_value_spent)
+            .unwrap_or(0)
+    }
+    pub fn get_received_note_from_identifier<D: DomainWalletExt>(
+        &self,
+        note_record_reference: ShNoteId,
+    ) -> Option<
+        zcash_client_backend::wallet::ReceivedNote<
+            ShNoteId,
+            <D as zcash_note_encryption::Domain>::Note,
+        >,
+    >
+    where
+        <D as zcash_note_encryption::Domain>::Note: PartialEq + Clone,
+        <D as zcash_note_encryption::Domain>::Recipient: super::traits::Recipient,
+    {
+        let transaction = self.get(&note_record_reference.txid);
+        transaction.and_then(|transaction_record| {
+            if note_record_reference.shpool == D::SHIELDED_PROTOCOL {
+                transaction_record.get_received_note::<D>(note_record_reference.index)
+            } else {
+                None
+            }
+        })
+    }
+}
+
 /// Methods to modify the map.
 impl TransactionRecordsById {
     /// Adds a TransactionRecord to the hashmap, using its TxId as a key.
@@ -141,11 +176,7 @@ impl TransactionRecordsById {
                 });
         });
     }
-}
 
-/// This impl was extracted from:
-/// [`crate::wallet::transactions::recording::TxMapAndMaybeTrees`]
-impl crate::wallet::transaction_records_by_id::TransactionRecordsById {
     /// Invalidates all those transactions which were broadcast but never 'confirmed' accepted by a miner.
     pub(crate) fn clear_expired_mempool(&mut self, latest_height: u64) {
         let cutoff = BlockHeight::from_u32(
@@ -165,11 +196,6 @@ impl crate::wallet::transaction_records_by_id::TransactionRecordsById {
             .for_each(|t| println!("Removing expired mempool tx {}", t));
 
         self.invalidate_transactions(txids_to_remove);
-    }
-    pub fn total_funds_spent_in(&self, txid: &TxId) -> u64 {
-        self.get(txid)
-            .map(TransactionRecord::total_value_spent)
-            .unwrap_or(0)
     }
     // Check this transaction to see if it is an outgoing transaction, and if it is, mark all received notes with non-textual memos in this
     // transaction as change. i.e., If any funds were spent in this transaction, all received notes without user-specified memos are change.
@@ -444,33 +470,47 @@ impl Default for TransactionRecordsById {
 
 #[cfg(test)]
 mod tests {
-    use crate::wallet::{
-        notes::{sapling::mocks::SaplingNoteBuilder, transparent::mocks::TransparentOutputBuilder},
-        transaction_record::mocks::TransactionRecordBuilder,
+    use sapling_crypto::note_encryption::SaplingDomain;
+    use zcash_client_backend::ShieldedProtocol;
+    use zcash_primitives::consensus::BlockHeight;
+
+    use zingo_status::confirmation_status::ConfirmationStatus::Confirmed;
+
+    use crate::{
+        test_framework::mocks::random_txid,
+        wallet::{
+            notes::{
+                orchard::mocks::OrchardNoteBuilder, query::OutputSpendStatusQuery,
+                sapling::mocks::SaplingNoteBuilder, transparent::mocks::TransparentOutputBuilder,
+                OutputInterface,
+            },
+            transaction_record::mocks::{nine_note_transaction_record, TransactionRecordBuilder},
+        },
     };
 
     use super::TransactionRecordsById;
-
-    use zcash_primitives::consensus::BlockHeight;
-    use zingo_status::confirmation_status::ConfirmationStatus::Confirmed;
-
     #[test]
     fn invalidated_note_is_deleted() {
-        let mut transaction_record_early = TransactionRecordBuilder::default()
-            .randomize_txid()
-            .status(Confirmed(5.into()))
-            .build();
-        transaction_record_early
-            .transparent_outputs
-            .push(TransparentOutputBuilder::default().build());
-
-        let mut transaction_record_later = TransactionRecordBuilder::default()
+        let transaction_record_later = TransactionRecordBuilder::default()
             .randomize_txid()
             .status(Confirmed(15.into()))
+            .transparent_outputs(TransparentOutputBuilder::default())
             .build();
-        transaction_record_later
-            .sapling_notes
-            .push(SaplingNoteBuilder::default().build());
+        let spending_txid = transaction_record_later.txid;
+
+        let transaction_record_early = TransactionRecordBuilder::default()
+            .randomize_txid()
+            .status(Confirmed(5.into()))
+            .transparent_outputs(
+                TransparentOutputBuilder::default().spent(Some((spending_txid, 15))),
+            )
+            .sapling_notes(SaplingNoteBuilder::default().spent(Some((spending_txid, 15))))
+            .orchard_notes(OrchardNoteBuilder::default().spent(Some((spending_txid, 15))))
+            .sapling_notes(SaplingNoteBuilder::default().spent(Some((random_txid(), 15))))
+            .orchard_notes(OrchardNoteBuilder::default())
+            .build();
+
+        let txid_containing_valid_note_with_invalid_spend = transaction_record_early.txid;
 
         let mut transaction_records_by_id = TransactionRecordsById::default();
         transaction_records_by_id.insert_transaction_record(transaction_record_early);
@@ -481,5 +521,55 @@ mod tests {
         transaction_records_by_id.invalidate_all_transactions_after_or_at_height(reorg_height);
 
         assert_eq!(transaction_records_by_id.len(), 1);
+        let ssq = OutputSpendStatusQuery::new(true, false, false);
+        assert!(!transaction_records_by_id
+            .get(&txid_containing_valid_note_with_invalid_spend)
+            .unwrap()
+            .transparent_outputs
+            .first()
+            .unwrap()
+            .spend_status_query(ssq));
+        assert!(!transaction_records_by_id
+            .get(&txid_containing_valid_note_with_invalid_spend)
+            .unwrap()
+            .sapling_notes
+            .first()
+            .unwrap()
+            .spend_status_query(ssq));
+    }
+
+    #[test]
+    fn get_received_note_from_identifier() {
+        let mut trbid = TransactionRecordsById::new();
+        let transaction_record = nine_note_transaction_record(
+            10_000, 20_000, 30_000, 40_000, 50_000, 60_000, 70_000, 80_000, 90_000,
+        );
+        let txid = transaction_record.txid; // this is the txid we intend toselect.
+        trbid.insert_transaction_record(transaction_record);
+        trbid.insert_transaction_record(nine_note_transaction_record(
+            10, 20, 30, 40, 50, 60, 70, 80, 90,
+        ));
+        trbid.insert_transaction_record(nine_note_transaction_record(1, 2, 3, 4, 5, 6, 7, 8, 9));
+
+        let received_note = trbid.get_received_note_from_identifier::<SaplingDomain>(
+            crate::wallet::notes::ShNoteId {
+                txid,
+                shpool: ShieldedProtocol::Sapling,
+                index: 0,
+            },
+        );
+
+        assert_eq!(
+            received_note.unwrap().note(),
+            &trbid
+                .0
+                .values()
+                .next()
+                .unwrap()
+                .sapling_notes
+                .first()
+                .unwrap()
+                .sapling_crypto_note
+        )
     }
 }

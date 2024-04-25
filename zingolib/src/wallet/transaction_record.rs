@@ -1,24 +1,26 @@
-//! Data about a particular Transaction
+//! An (incomplete) representation of what the Zingo instance "knows" about a transaction
+//! conspicuously absent is the set of transparent inputs to the transaction.
+//! by its`nature this evolves through, different states of completeness.
 
-use byteorder::{LittleEndian, ReadBytesExt as _, WriteBytesExt as _};
 use std::io::{self, Read, Write};
 
+use byteorder::{LittleEndian, ReadBytesExt as _, WriteBytesExt as _};
 use incrementalmerkletree::witness::IncrementalWitness;
 use orchard::tree::MerkleHashOrchard;
 use zcash_client_backend::PoolType;
 use zcash_primitives::{consensus::BlockHeight, transaction::TxId};
 
-use crate::error::ZingoLibError;
-use crate::wallet::notes::interface::OutputInterface;
-use crate::wallet::traits::ReadableWriteable;
-use crate::wallet::{
-    data::{OutgoingTxData, PoolNullifier, COMMITMENT_TREE_LEVELS},
-    keys::unified::WalletCapability,
-    notes::{
-        query::OutputQuery, OrchardNote, OutputId, SaplingNote, ShieldedNoteInterface,
-        TransparentOutput,
+use crate::{
+    error::ZingoLibError,
+    wallet::{
+        data::{OutgoingTxData, PoolNullifier, COMMITMENT_TREE_LEVELS},
+        keys::unified::WalletCapability,
+        notes::{
+            self, query::OutputQuery, OrchardNote, OutputId, OutputInterface as _, SaplingNote,
+            ShNoteId, ShieldedNoteInterface, TransparentOutput,
+        },
+        traits::{DomainWalletExt, ReadableWriteable as _},
     },
-    traits::DomainWalletExt,
 };
 
 ///  Everything (SOMETHING) about a transaction
@@ -203,6 +205,39 @@ impl TransactionRecord {
         }
     }
 
+    /// For each Shielded note received in this transactions,
+    /// pair it with a NoteRecordIdentifier identifying the note
+    /// and return the list
+    pub fn select_unspent_shnotes_and_ids<D>(
+        &self,
+    ) -> Vec<(<D as zcash_note_encryption::Domain>::Note, ShNoteId)>
+    where
+        D: DomainWalletExt,
+        <D as zcash_note_encryption::Domain>::Note: PartialEq + Clone,
+        <D as zcash_note_encryption::Domain>::Recipient: super::traits::Recipient,
+    {
+        let mut value_ref_pairs = Vec::new();
+        <D as DomainWalletExt>::get_shnotes(self)
+            .iter()
+            .for_each(|note| {
+                if !notes::OutputInterface::is_spent_or_pending_spent(note) {
+                    if let Some(index) = note.output_index() {
+                        let index = *index;
+                        let note_record_reference = ShNoteId {
+                            txid: self.txid,
+                            shpool: D::SHIELDED_PROTOCOL,
+                            index,
+                        };
+                        value_ref_pairs.push((
+                            notes::ShieldedNoteInterface::note(note).clone(),
+                            note_record_reference,
+                        ));
+                    }
+                }
+            });
+        value_ref_pairs
+    }
+
     /// TODO: Add Doc Comment Here!
     // TODO: This is incorrect in the edge case where where we have a send-to-self with
     // no text memo and 0-value fee
@@ -243,7 +278,7 @@ impl TransactionRecord {
         <D as zcash_note_encryption::Domain>::Note: PartialEq + Clone,
         <D as zcash_note_encryption::Domain>::Recipient: super::traits::Recipient,
     {
-        D::to_notes_vec(self)
+        D::get_shnotes(self)
             .iter()
             .map(|note_and_metadata| note_and_metadata.value())
             .sum()
@@ -281,6 +316,44 @@ impl TransactionRecord {
             self.total_sapling_value_spent,
             self.total_orchard_value_spent,
         ]
+    }
+
+    /// Gets a received note, by index and domain
+    pub fn get_received_note<D>(
+        &self,
+        index: u32,
+    ) -> Option<
+        zcash_client_backend::wallet::ReceivedNote<
+            ShNoteId,
+            <D as zcash_note_encryption::Domain>::Note,
+        >,
+    >
+    where
+        D: DomainWalletExt + Sized,
+        D::Note: PartialEq + Clone,
+        D::Recipient: super::traits::Recipient,
+    {
+        let note = D::get_shnotes(self)
+            .iter()
+            .find(|note| *note.output_index() == Some(index));
+        note.and_then(|note| {
+            let txid = self.txid;
+            let note_record_reference = ShNoteId {
+                txid,
+                shpool: note.to_zcb_note().protocol(),
+                index,
+            };
+            note.witnessed_position().map(|pos| {
+                zcash_client_backend::wallet::ReceivedNote::from_parts(
+                    note_record_reference,
+                    txid,
+                    index as u16,
+                    note.note().clone(),
+                    zip32::Scope::External,
+                    pos,
+                )
+            })
+        })
     }
 }
 // read/write
@@ -489,6 +562,20 @@ pub mod mocks {
             self.txid(crate::test_framework::mocks::random_txid())
         }
 
+        /// Sets the output indexes of all contained notes
+        pub fn set_output_indexes(mut self) -> Self {
+            for (i, toutput) in self.transparent_outputs.iter_mut().enumerate() {
+                toutput.output_index = Some(i as u64);
+            }
+            for (i, snote) in self.sapling_notes.iter_mut().enumerate() {
+                snote.output_index = Some(Some(i as u32));
+            }
+            for (i, snote) in self.orchard_notes.iter_mut().enumerate() {
+                snote.output_index = Some(Some(i as u32));
+            }
+            self
+        }
+
         /// builds a mock TransactionRecord after all pieces are supplied
         pub fn build(self) -> TransactionRecord {
             let mut transaction_record = TransactionRecord::new(
@@ -521,6 +608,7 @@ pub mod mocks {
     }
 
     /// creates a TransactionRecord holding each type of note with custom values.
+    #[allow(clippy::too_many_arguments)]
     pub fn nine_note_transaction_record(
         transparent_unspent: u64,
         transparent_spent: u64,
@@ -570,16 +658,20 @@ pub mod mocks {
                     .value(orchard_semi_spent),
             )
             .randomize_txid()
+            .set_output_indexes()
             .build()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use orchard::note_encryption::OrchardDomain;
+    use sapling_crypto::note_encryption::SaplingDomain;
+
+    use proptest::prelude::proptest;
     use test_case::test_matrix;
 
     use crate::wallet::notes::query::OutputQuery;
-
     use crate::wallet::notes::transparent::mocks::TransparentOutputBuilder;
     use crate::wallet::transaction_record::mocks::{
         nine_note_transaction_record, TransactionRecordBuilder,
@@ -726,18 +818,102 @@ mod tests {
         );
     }
 
+    proptest! {
+        #[test]
+        #[allow(clippy::too_many_arguments)]
+        fn total_value_received(
+            transparent_unspent: u32,
+            transparent_spent: u32,
+            transparent_semi_spent: u32,
+            sapling_unspent: u32,
+            sapling_spent: u32,
+            sapling_semi_spent: u32,
+            orchard_unspent: u32,
+            orchard_spent: u32,
+            orchard_semi_spent: u32,
+            ) {
+            let transaction_record = nine_note_transaction_record(transparent_unspent.into(), transparent_spent.into(), transparent_semi_spent.into(), sapling_unspent.into(), sapling_spent.into(), sapling_semi_spent.into(), orchard_unspent.into(), orchard_spent.into(), orchard_semi_spent.into());
+            let old_total = transaction_record
+                .pool_value_received::<orchard::note_encryption::OrchardDomain>()
+                + transaction_record
+                    .pool_value_received::<sapling_crypto::note_encryption::SaplingDomain>()
+                + transaction_record
+                    .transparent_outputs
+                    .iter()
+                    .map(|utxo| utxo.value)
+                    .sum::<u64>();
+            assert_eq!(transaction_record.total_value_received(), old_total);
+        }
+    }
+
     #[test]
-    fn total_value_received() {
-        let transaction_record = nine_note_transaction_record(1, 2, 3, 4, 5, 6, 7, 8, 9); // proptest this when proptest merges
-        let old_total = transaction_record
-            .pool_value_received::<orchard::note_encryption::OrchardDomain>()
-            + transaction_record
-                .pool_value_received::<sapling_crypto::note_encryption::SaplingDomain>()
-            + transaction_record
-                .transparent_outputs
-                .iter()
-                .map(|utxo| utxo.value)
-                .sum::<u64>();
-        assert_eq!(transaction_record.total_value_received(), old_total);
+    fn select_unspent_shnotes_and_ids() {
+        let transaction_record = nine_note_transaction_record(
+            10_000, 20_000, 30_000, 40_000, 50_000, 60_000, 70_000, 80_000, 90_000,
+        );
+
+        let sapling_notes = transaction_record.select_unspent_shnotes_and_ids::<SaplingDomain>();
+        assert_eq!(
+            sapling_notes.first().unwrap().0,
+            transaction_record
+                .sapling_notes
+                .first()
+                .unwrap()
+                .sapling_crypto_note,
+        );
+        let orchard_notes = transaction_record.select_unspent_shnotes_and_ids::<OrchardDomain>();
+        assert_eq!(
+            orchard_notes.first().unwrap().0,
+            transaction_record
+                .orchard_notes
+                .first()
+                .unwrap()
+                .orchard_crypto_note,
+        );
+    }
+
+    #[test]
+    fn get_received_note() {
+        let transaction_record = nine_note_transaction_record(
+            10_000, 20_000, 30_000, 40_000, 50_000, 60_000, 70_000, 80_000, 90_000,
+        );
+
+        assert_eq!(
+            transaction_record
+                .get_received_note::<SaplingDomain>(0)
+                .unwrap()
+                .note(),
+            &transaction_record
+                .sapling_notes
+                .first()
+                .unwrap()
+                .sapling_crypto_note
+        );
+        assert_eq!(
+            transaction_record
+                .get_received_note::<SaplingDomain>(1)
+                .unwrap()
+                .note(),
+            &transaction_record
+                .sapling_notes
+                .get(1)
+                .unwrap()
+                .sapling_crypto_note
+        );
+        assert_eq!(
+            transaction_record
+                .get_received_note::<SaplingDomain>(2)
+                .unwrap()
+                .note(),
+            &transaction_record
+                .sapling_notes
+                .get(2)
+                .unwrap()
+                .sapling_crypto_note
+        );
+        assert_eq!(
+            transaction_record.get_received_note::<SaplingDomain>(3),
+            None
+        );
     }
 }

@@ -15,6 +15,8 @@ use super::{
 
 /// TODO: Add Doc Comment Here!
 pub trait OutputInterface: Sized {
+    /// TODO: Add Doc Comment Here!
+    type Output: PartialEq + Clone;
     /// returns the zcash_client_backend PoolType enum (one of 3)
     fn pool_type(&self) -> PoolType;
 

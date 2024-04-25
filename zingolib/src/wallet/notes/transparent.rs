@@ -30,6 +30,8 @@ pub struct TransparentOutput {
 }
 
 impl OutputInterface for TransparentOutput {
+    type Output = TransparentOutput;
+
     fn pool_type(&self) -> PoolType {
         PoolType::Transparent
     }
@@ -194,15 +196,15 @@ impl TransparentOutput {
 #[cfg(any(test, feature = "test-features"))]
 pub mod mocks {
     //! Mock version of the struct for testing
-    use zcash_primitives::transaction::TxId;
+    use zcash_primitives::{legacy::TransparentAddress, transaction::TxId};
 
     use crate::{test_framework::mocks::build_method, wallet::notes::TransparentOutput};
 
     /// to create a mock TransparentOutput
-    pub struct TransparentOutputBuilder {
+    pub(crate) struct TransparentOutputBuilder {
         address: Option<String>,
         txid: Option<TxId>,
-        output_index: Option<u64>,
+        pub output_index: Option<u64>,
         script: Option<Vec<u8>>,
         value: Option<u64>,
         spent: Option<Option<(TxId, u32)>>,
@@ -251,7 +253,7 @@ pub mod mocks {
                 .address("default_address".to_string())
                 .txid(TxId::from_bytes([0u8; 32]))
                 .output_index(0)
-                .script(vec![])
+                .script(TransparentAddress::ScriptHash([0; 20]).script().0)
                 .value(100000)
                 .spent(None)
                 .unconfirmed_spent(None)

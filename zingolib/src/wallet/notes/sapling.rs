@@ -63,6 +63,8 @@ impl std::fmt::Debug for SaplingNote {
 }
 
 impl OutputInterface for SaplingNote {
+    type Output = sapling_crypto::Note;
+
     fn pool_type(&self) -> PoolType {
         PoolType::Shielded(ShieldedProtocol::Sapling)
     }
@@ -90,7 +92,7 @@ impl OutputInterface for SaplingNote {
 
 impl ShieldedNoteInterface for SaplingNote {
     type Diversifier = sapling_crypto::Diversifier;
-    type Note = sapling_crypto::Note;
+    type Note = <Self as OutputInterface>::Output;
     type Node = sapling_crypto::Node;
     type Nullifier = sapling_crypto::Nullifier;
 
@@ -214,7 +216,7 @@ pub mod mocks {
         diversifier: Option<sapling_crypto::Diversifier>,
         note: Option<SaplingCryptoNoteBuilder>,
         witnessed_position: Option<Option<Position>>,
-        output_index: Option<Option<u32>>,
+        pub output_index: Option<Option<u32>>,
         nullifier: Option<Option<sapling_crypto::Nullifier>>,
         spent: Option<Option<(TxId, u32)>>,
         unconfirmed_spent: Option<Option<(TxId, u32)>>,

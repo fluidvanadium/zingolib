@@ -33,6 +33,7 @@ use zcash_client_backend::{
         compact_formats::{CompactOrchardAction, CompactSaplingOutput, CompactTx},
         service::TreeState,
     },
+    ShieldedProtocol,
 };
 use zcash_encoding::{Optional, Vector};
 use zcash_note_encryption::{
@@ -462,6 +463,8 @@ where
     const NU: NetworkUpgrade;
     /// TODO: Add Doc Comment Here!
     const NAME: &'static str;
+    /// The [zcash_client_backend::ShieldedProtocol] this domain represents
+    const SHIELDED_PROTOCOL: ShieldedProtocol;
 
     /// TODO: Add Doc Comment Here!
     type Fvk: Clone
@@ -486,8 +489,8 @@ where
     type Bundle: Bundle<Self>;
 
     /// TODO: Add Doc Comment Here!
-    fn sum_pool_change(transaction_md: &TransactionRecord) -> u64 {
-        Self::to_notes_vec(transaction_md)
+    fn sum_pool_change(transaction_record: &TransactionRecord) -> u64 {
+        Self::get_shnotes(transaction_record)
             .iter()
             .filter(|nd| nd.is_change())
             .map(|nd| nd.value())
@@ -533,7 +536,7 @@ where
     fn get_tree(tree_state: &TreeState) -> &String;
 
     /// TODO: Add Doc Comment Here!
-    fn to_notes_vec(_: &TransactionRecord) -> &Vec<Self::WalletNote>;
+    fn get_shnotes(_: &TransactionRecord) -> &Vec<Self::WalletNote>;
 
     /// TODO: Add Doc Comment Here!
     fn to_notes_vec_mut(_: &mut TransactionRecord) -> &mut Vec<Self::WalletNote>;
@@ -554,6 +557,7 @@ where
 impl DomainWalletExt for SaplingDomain {
     const NU: NetworkUpgrade = NetworkUpgrade::Sapling;
     const NAME: &'static str = "sapling";
+    const SHIELDED_PROTOCOL: ShieldedProtocol = ShieldedProtocol::Sapling;
 
     type Fvk = sapling_crypto::zip32::DiversifiableFullViewingKey;
 
@@ -599,8 +603,8 @@ impl DomainWalletExt for SaplingDomain {
         &tree_state.sapling_tree
     }
 
-    fn to_notes_vec(transaction_md: &TransactionRecord) -> &Vec<Self::WalletNote> {
-        &transaction_md.sapling_notes
+    fn get_shnotes(transaction_record: &TransactionRecord) -> &Vec<Self::WalletNote> {
+        &transaction_record.sapling_notes
     }
 
     fn to_notes_vec_mut(transaction: &mut TransactionRecord) -> &mut Vec<Self::WalletNote> {
@@ -629,6 +633,7 @@ impl DomainWalletExt for SaplingDomain {
 impl DomainWalletExt for OrchardDomain {
     const NU: NetworkUpgrade = NetworkUpgrade::Nu5;
     const NAME: &'static str = "orchard";
+    const SHIELDED_PROTOCOL: ShieldedProtocol = ShieldedProtocol::Orchard;
 
     type Fvk = orchard::keys::FullViewingKey;
 
@@ -674,7 +679,7 @@ impl DomainWalletExt for OrchardDomain {
         &tree_state.orchard_tree
     }
 
-    fn to_notes_vec(transaction_md: &TransactionRecord) -> &Vec<Self::WalletNote> {
+    fn get_shnotes(transaction_md: &TransactionRecord) -> &Vec<Self::WalletNote> {
         &transaction_md.orchard_notes
     }
 

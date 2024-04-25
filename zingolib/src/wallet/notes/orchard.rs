@@ -43,6 +43,8 @@ pub struct OrchardNote {
 }
 
 impl OutputInterface for OrchardNote {
+    type Output = orchard::note::Note;
+
     fn pool_type(&self) -> PoolType {
         PoolType::Shielded(ShieldedProtocol::Orchard)
     }
@@ -70,7 +72,7 @@ impl OutputInterface for OrchardNote {
 
 impl ShieldedNoteInterface for OrchardNote {
     type Diversifier = orchard::keys::Diversifier;
-    type Note = orchard::note::Note;
+    type Note = <Self as OutputInterface>::Output;
     type Node = orchard::tree::MerkleHashOrchard;
     type Nullifier = orchard::note::Nullifier;
 
@@ -193,7 +195,7 @@ pub mod mocks {
         diversifier: Option<Diversifier>,
         note: Option<OrchardCryptoNoteBuilder>,
         witnessed_position: Option<Option<Position>>,
-        output_index: Option<Option<u32>>,
+        pub output_index: Option<Option<u32>>,
         nullifier: Option<Option<Nullifier>>,
         spent: Option<Option<(TxId, u32)>>,
         unconfirmed_spent: Option<Option<(TxId, u32)>>,
