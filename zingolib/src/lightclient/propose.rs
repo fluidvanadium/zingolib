@@ -253,8 +253,7 @@ impl LightClient {
     }
     /// A helper method that standardizes latest_proposal update
     async fn update_latest_proposal(&self, proposal: crate::data::proposal::ZingoProposal) {
-        let mut latest_proposal_lock = self.latest_proposal.write().await;
-        *latest_proposal_lock = Some(proposal.clone());
+        *(self.latest_proposal.write().await) = Some(proposal.clone());
     }
 }
 #[cfg(test)]
