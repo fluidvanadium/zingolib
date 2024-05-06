@@ -172,7 +172,7 @@ pub enum DoSendProposedError {
     SaplingParams(String),
     #[error("Could not find UnifiedSpendKey: {0}")]
     UnifiedSpendKey(std::io::Error),
-    #[error("No proposal. Call do_propose first.")]
+    #[error("Can't Calculate! No proposal. Call do_propose first?")]
     Calculation(
         zcash_client_backend::data_api::error::Error<
             crate::wallet::tx_map_and_maybe_trees::TxMapAndMaybeTreesTraitError,
@@ -191,6 +191,6 @@ pub enum DoSendProposedError {
 pub enum DoQuickSendProposedError {
     #[error("propose {0}")]
     Propose(crate::lightclient::propose::DoProposeError),
-    #[error("No proposal. Call do_propose first.")]
+    #[error("Can't QuickSend! No proposal. Call do_propose first.")]
     Send(DoSendProposedError),
 }
