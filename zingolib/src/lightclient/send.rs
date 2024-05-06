@@ -123,6 +123,7 @@ impl LightClient {
         }
 
         if let Some(proposal) = self.latest_proposal.read().await.as_ref() {
+            // fetch parameters for all outgoing transactions
             let submission_height = self
                 .get_submission_height()
                 .await
