@@ -169,10 +169,10 @@ impl LightClient {
         )
         .map_err(DoProposeError::Proposal)?;
 
-        let mut latest_proposal_lock = self.latest_proposal.write().await;
-        *latest_proposal_lock = Some(crate::data::proposal::ZingoProposal::Transfer(
+        self.update_latest_proposal(crate::data::proposal::ZingoProposal::Transfer(
             proposal.clone(),
-        ));
+        ))
+        .await;
         Ok(proposal)
     }
 
@@ -245,10 +245,16 @@ impl LightClient {
         )
         .map_err(DoProposeError::ShieldProposal)?;
 
-        *self.latest_proposal.write().await = Some(crate::data::proposal::ZingoProposal::Shield(
+        self.update_latest_proposal(crate::data::proposal::ZingoProposal::Shield(
             proposed_shield.clone(),
-        ));
+        ))
+        .await;
         Ok(proposed_shield)
+    }
+    /// A helper method that standardizes latest_proposal update
+    async fn update_latest_proposal(&self, proposal: crate::data::proposal::ZingoProposal) {
+        let mut latest_proposal_lock = self.latest_proposal.write().await;
+        *latest_proposal_lock = Some(proposal.clone());
     }
 }
 #[cfg(test)]
