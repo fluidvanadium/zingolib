@@ -1,6 +1,7 @@
 //! LightClient function do_propose generates a proposal to send to specified addresses.
 
 use crate::{
+    data::proposal::ZingoProposal,
     lightclient::LightClient,
     wallet::tx_map_and_maybe_trees::{TxMapAndMaybeTrees, TxMapAndMaybeTreesTraitError},
 };
@@ -169,10 +170,8 @@ impl LightClient {
         )
         .map_err(DoProposeError::Proposal)?;
 
-        self.update_latest_proposal(crate::data::proposal::ZingoProposal::Transfer(
-            proposal.clone(),
-        ))
-        .await;
+        self.update_latest_proposal(ZingoProposal::Transfer(proposal.clone()))
+            .await;
         Ok(proposal)
     }
 
@@ -245,14 +244,12 @@ impl LightClient {
         )
         .map_err(DoProposeError::ShieldProposal)?;
 
-        self.update_latest_proposal(crate::data::proposal::ZingoProposal::Shield(
-            proposed_shield.clone(),
-        ))
-        .await;
+        self.update_latest_proposal(ZingoProposal::Shield(proposed_shield.clone()))
+            .await;
         Ok(proposed_shield)
     }
     /// A helper method that standardizes latest_proposal update
-    async fn update_latest_proposal(&self, proposal: crate::data::proposal::ZingoProposal) {
+    async fn update_latest_proposal(&self, proposal: ZingoProposal) {
         *(self.latest_proposal.write().await) = Some(proposal.clone());
     }
 }
