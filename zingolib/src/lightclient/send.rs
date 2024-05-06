@@ -31,14 +31,15 @@ impl LightClient {
 
     async fn update_tmamt_and_return_step_result<N>(
         &self,
+        proposal: &Proposal<zcash_primitives::transaction::fees::zip317::FeeRule, N>,
         step: zcash_client_backend::proposal::Step<N>,
         step_results: &Vec<(
             &zcash_client_backend::proposal::Step<N>,
             zcash_primitives::transaction::builder::BuildResult,
         )>,
-        fee_rule: &zcash_primitives::transaction::fees::zip317::FeeRule,
-        min_target_height: BlockHeight,
     ) -> Result<zcash_primitives::transaction::builder::BuildResult, DoSendProposedError> {
+        let fee_rule = proposal.fee_rule();
+        let min_target_height = proposal.min_target_height();
         let unified_spend_key = zcash_keys::keys::UnifiedSpendingKey::try_from(
             self.wallet.wallet_capability().as_ref(),
         )
@@ -75,16 +76,9 @@ impl LightClient {
     ) -> Result<NonEmpty<TxId>, DoSendProposedError> {
         let mut step_results = Vec::with_capacity(proposal.steps().len());
         let mut txids = Vec::with_capacity(proposal.steps().len());
-        let fee_rule = proposal.fee_rule();
-        let min_target_height = proposal.min_target_height();
         for step in proposal.steps() {
             let step_result = self
-                .update_tmamt_and_return_step_result(
-                    step.clone(),
-                    &step_results,
-                    fee_rule,
-                    min_target_height,
-                )
+                .update_tmamt_and_return_step_result(proposal, step.clone(), &step_results)
                 .await?;
 
             let txid = self
