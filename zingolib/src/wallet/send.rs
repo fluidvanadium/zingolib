@@ -834,6 +834,25 @@ impl LightWallet {
         Ok(tx_builder)
     }
 
+    #[cfg(feature = "darkside_tests")]
+    async fn get_darkside_txid<F, Fut>(
+        transaction: &Transaction,
+        broadcast_fn: F,
+    ) -> Result<TxId, String>
+    where
+        F: Fn(Box<[u8]>) -> Fut,
+        Fut: Future<Output = Result<String, String>>,
+    {
+        let mut raw_transaction = vec![];
+        transaction.write(&mut raw_transaction).unwrap();
+        let serverz_transaction_id =
+            broadcast_fn(raw_transaction.clone().into_boxed_slice()).await?;
+        if let Ok(serverz_txid_bytes) = dbg!(serverz_transaction_id).into_bytes().try_into() {
+            Ok(TxId::from_bytes(serverz_txid_bytes))
+        } else {
+            Err("Couldn't transfrom string to bytes.".to_string())
+        }
+    }
     pub(crate) async fn send_to_addresses_inner<F, Fut>(
         &self,
         transaction: &Transaction,
@@ -848,13 +867,6 @@ impl LightWallet {
             self.send_progress.write().await.is_send_in_progress = false;
         }
 
-        // Create the transaction bytes
-        let mut raw_transaction = vec![];
-        transaction.write(&mut raw_transaction).unwrap();
-
-        let serverz_transaction_id =
-            broadcast_fn(raw_transaction.clone().into_boxed_slice()).await?;
-
         // Add this transaction to the mempool structure
         {
             let price = self.price.read().await.clone();
@@ -865,22 +877,11 @@ impl LightWallet {
                 .await;
         }
 
+        #[cfg(not(feature = "darkside_tests"))]
         let txid = transaction.txid();
 
-        if let Ok(serverz_txid_bytes) = dbg!(serverz_transaction_id).into_bytes().try_into() {
-            let serverz_txid = TxId::from_bytes(serverz_txid_bytes);
-            if txid != serverz_txid {
-                // happens during darkside tests
-                dbg!(
-                    "served txid {} does not match calulated txid {}",
-                    serverz_txid,
-                    txid,
-                );
-                if self.transaction_context.config.accept_server_txids {
-                    return Ok(serverz_txid);
-                }
-            }
-        }
+        #[cfg(feature = "darkside_tests")]
+        let txid = LightWallet::get_darkside_txid(transaction, broadcast_fn).await?;
 
         Ok(txid)
     }
