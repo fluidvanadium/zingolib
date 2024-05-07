@@ -178,23 +178,12 @@ impl LightClient {
     fn get_transparent_addresses(
         &self,
     ) -> Result<Vec<zcash_primitives::legacy::TransparentAddress>, DoProposeError> {
-        let secp = secp256k1::Secp256k1::new();
         Ok(self
             .wallet
             .wallet_capability()
-            .transparent_child_keys()
-            .map_err(|_e| {
-                DoProposeError::ShieldProposal(
-                    zcash_client_backend::data_api::error::Error::DataSource(
-                        TxMapAndMaybeTreesTraitError::NoSpendCapability,
-                    ),
-                )
-            })?
+            .transparent_child_addresses()
             .iter()
-            .map(|(_index, sk)| {
-                #[allow(deprecated)]
-                zcash_primitives::legacy::keys::pubkey_to_address(&sk.public_key(&secp))
-            })
+            .map(|(_index, sk)| *sk)
             .collect::<Vec<_>>())
     }
     /// The shield operation consumes a proposal that transfers value
@@ -237,7 +226,7 @@ impl LightClient {
             &input_selector,
             // don't shield dust
             NonNegativeAmount::const_from_u64(10_000),
-            &self.get_transparent_addresses()?,
+            &dbg!(self.get_transparent_addresses()?),
             // review! do we want to require confirmations?
             // make it configurable?
             0,
