@@ -31,10 +31,10 @@ impl LightClient {
         &self,
         proposal: &Proposal<zcash_primitives::transaction::fees::zip317::FeeRule, N>,
         step: zcash_client_backend::proposal::Step<N>,
-        step_results: &Vec<(
+        step_results: &[(
             &zcash_client_backend::proposal::Step<N>,
             zcash_primitives::transaction::builder::BuildResult,
-        )>,
+        )],
     ) -> Result<zcash_primitives::transaction::builder::BuildResult, DoSendProposedError> {
         let fee_rule = proposal.fee_rule();
         let min_target_height = proposal.min_target_height();
@@ -62,7 +62,7 @@ impl LightClient {
             zcash_client_backend::wallet::OvkPolicy::Sender,
             fee_rule,
             min_target_height,
-            &step_results,
+            step_results,
             &step,
         )
         .map_err(DoSendProposedError::Calculation)
