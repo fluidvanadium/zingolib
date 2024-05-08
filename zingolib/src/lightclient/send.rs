@@ -176,10 +176,9 @@ mod test {
         .await
         .expect("A client!");
         dbg!("Begin test fn 3");
-        let proposal = ProposalBuilder::new().build();
+        let proposal = ProposalBuilder::default().build();
         dbg!("Begin test fn 4");
-        let step = StepBuilder::new().build();
-        dbg!("Begin test fn 5");
+        let step = StepBuilder::default().build();
         let step_results: Vec<(
             &zcash_client_backend::proposal::Step<zcash_client_backend::wallet::NoteId>,
             zcash_primitives::transaction::builder::BuildResult,
