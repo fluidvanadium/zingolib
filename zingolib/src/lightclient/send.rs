@@ -159,12 +159,12 @@ mod test {
     use zingoconfig::ZingoConfigBuilder;
 
     use crate::{
-        lightclient::LightClient,
+        lightclient::{send::DoSendProposedError, LightClient},
         test_framework::mocks::{ProposalBuilder, StepBuilder},
     };
 
     #[tokio::test]
-    async fn update_tmamt_and_return_step_result() {
+    async fn update_tmamt_and_return_step_result_no_receipts() {
         let config = ZingoConfigBuilder::default().create();
         let client = LightClient::create_unconnected(
             &config,
@@ -182,8 +182,30 @@ mod test {
         let step_result = client
             .update_tmamt_and_return_step_result(&proposal, step, &step_results)
             .await;
-        dbg!(step_result.unwrap());
+        dbg!(&step_result);
+        if let Err(DoSendProposedError::Calculation(e)) = step_result {
+            if let zcash_client_backend::data_api::error::Error::CommitmentTree(e2) = e {
+                if let shardtree::error::ShardTreeError::Query(e3) = e2 {
+                    assert_eq!(e3, shardtree::error::QueryError::CheckpointPruned);
+                } else {
+                    panic!("Wrong Error in layer 3.");
+                };
+            } else {
+                panic!("Wrong zcash_api error!");
+            }
+        } else {
+            panic!("Wrong state!");
+        }
     }
+    /*
+    match step_result {
+        Err(DoSendProposedError::Calculation(e)) => {
+            match e {
+                zcash_client_backend::data_api::error::Error::CommitmentTree(e)
+            }
+        }
+        _ => panic!(),
+    */
 }
 
 /// Errors that can result from do_send_proposed
