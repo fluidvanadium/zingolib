@@ -324,9 +324,7 @@ pub mod proposal {
         /// `build` will panic if any fields of the builder are `None` or if the build failed
         /// due to invalid values.
         pub fn build(self) -> Proposal<FeeRule, NoteId> {
-            dbg!("Inside Proposal Builder build");
             let step = self.steps.unwrap().first().clone();
-            dbg!("Ooopppsss!");
             Proposal::single_step(
                 step.transaction_request().clone(),
                 step.payment_pools().clone(),
@@ -344,9 +342,7 @@ pub mod proposal {
     impl Default for ProposalBuilder {
         /// Constructs a new [`ProposalBuilder`] where all fields are preset to default values.
         fn default() -> Self {
-            dbg!("Inside ProposalBuilder default about to call new().");
             let mut builder = ProposalBuilder::new();
-            dbg!("Inside default about to build.");
             builder
                 .fee_rule(FeeRule::standard())
                 .min_target_height(BlockHeight::from_u32(1))
