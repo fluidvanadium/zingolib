@@ -401,7 +401,6 @@ pub mod proposal {
         /// due to invalid values.
         #[allow(dead_code)]
         pub fn build(self) -> Step<NoteId> {
-            dbg!("building!");
             Step::from_parts(
                 &[],
                 self.transaction_request.unwrap(),
