@@ -33,7 +33,7 @@ impl LightClient {
         // I am not clear on how long this operation may take, but it's
         // clearly unnecessary in a send that doesn't include sapling
         // TODO: Remove from sends that don't include Sapling
-        let (sapling_output, sapling_spend) = self.read_sapling_params()?;
+        let (sapling_output, sapling_spend) = crate::wallet::utils::read_sapling_params()?;
 
         let sapling_prover = LocalTxProver::from_bytes(&sapling_spend, &sapling_output);
 
@@ -101,15 +101,19 @@ impl LightClient {
             ));
         }
 
-        let address = address.unwrap_or(Address::from(
+        let recipient_address = address.unwrap_or(Address::from(
             self.wallet.wallet_capability().addresses()[0].clone(),
         ));
         let amount = zatoshis_from_u64(balance_to_shield - fee)
             .expect("balance cannot be outside valid range of zatoshis");
-        let receiver = vec![(address, amount, None)];
+        let receivers = vec![crate::data::receivers::Receiver {
+            recipient_address,
+            amount,
+            memo: None,
+        }];
 
         let _lock = self.sync_lock.lock().await;
-        let (sapling_output, sapling_spend) = self.read_sapling_params()?;
+        let (sapling_output, sapling_spend) = crate::wallet::utils::read_sapling_params()?;
 
         let sapling_prover = LocalTxProver::from_bytes(&sapling_spend, &sapling_output);
 
@@ -117,7 +121,7 @@ impl LightClient {
             .send_to_addresses(
                 sapling_prover,
                 pools_to_shield.to_vec(),
-                receiver,
+                receivers,
                 transaction_submission_height,
                 |transaction_bytes| {
                     crate::grpc_connector::send_transaction(
@@ -148,6 +152,7 @@ pub mod send_with_proposal {
 
     use crate::lightclient::propose::{ProposeSendError, ProposeShieldError};
     use crate::lightclient::LightClient;
+    use crate::wallet::utils::read_sapling_params;
 
     #[allow(missing_docs)] // error types document themselves
     #[derive(Debug, Error)]
@@ -227,9 +232,8 @@ pub mod send_with_proposal {
                 .await
                 .map_err(CompleteAndBroadcastError::SubmissionHeight)?;
 
-            let (sapling_output, sapling_spend): (Vec<u8>, Vec<u8>) = self
-                .read_sapling_params()
-                .map_err(CompleteAndBroadcastError::SaplingParams)?;
+            let (sapling_output, sapling_spend): (Vec<u8>, Vec<u8>) =
+                read_sapling_params().map_err(CompleteAndBroadcastError::SaplingParams)?;
             let sapling_prover = LocalTxProver::from_bytes(&sapling_spend, &sapling_output);
             let unified_spend_key =
                 UnifiedSpendingKey::try_from(self.wallet.wallet_capability().as_ref())
