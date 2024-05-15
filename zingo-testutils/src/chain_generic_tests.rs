@@ -7,7 +7,7 @@
 /// A Lightclient test may involve hosting a server to send data to the LightClient. This trait can be asked to set simple scenarios where a mock LightServer sends data showing a note to a LightClient, the LightClient updates and responds by sending the note, and the Lightserver accepts the transaction and rebroadcasts it...
 /// The initial two implementors are
 /// lib-to-node, which links a lightserver to a zcashd in regtest mode. see `impl ConductChain for LibtoNode
-/// darkside, a mode for the lightserver which mocks zcashd. search 'impl ConductChain for DarksideScenario
+/// darkside, a mode for the lightserver which mocks zcashd. search 'impl ConductChain for DarksideEnvironment
 pub mod conduct_chain {
     use zingolib::get_base_address;
     use zingolib::lightclient::LightClient;
@@ -131,7 +131,7 @@ pub mod fixtures {
     }
 
     /// sends back and forth several times, including sends to transparent
-    pub async fn send_shield_cycle<CC>(n: u64)
+    pub async fn send_shield_cycle<CC>(n: u64, primary_pool: PoolType, secondary_pool: PoolType)
     where
         CC: ConductChain,
     {
@@ -139,10 +139,10 @@ pub mod fixtures {
         let primary = environment
             .fund_client(1_000_000 + (n + 6) * MARGINAL_FEE.into_u64())
             .await;
-        let primary_address = primary.get_base_address(Shielded(Sapling)).await;
+        let primary_address = primary.get_base_address(primary_pool).await;
 
         let secondary = environment.create_client().await;
-        let secondary_address = secondary.get_base_address(Transparent).await;
+        let secondary_address = secondary.get_base_address(secondary_pool).await;
 
         for _ in 0..n {
             primary
