@@ -35,8 +35,12 @@ async fn libtonode_propose_and_broadcast_40_000_to_orchard() {
     propose_and_broadcast_value_to_pool::<LibtonodeEnvironment>(40_000, Shielded(Orchard)).await;
 }
 #[tokio::test]
-async fn libtonode_send_shield_cycle() {
+async fn libtonode_sapling_transparent_send_shield_cycle() {
     send_shield_cycle::<LibtonodeEnvironment>(4, Shielded(Sapling), Transparent).await;
+}
+#[tokio::test]
+async fn libtonode_orchard_sapling_send_shield_cycle() {
+    send_shield_cycle::<LibtonodeEnvironment>(4, Shielded(Orchard), Shielded(Sapling)).await;
 }
 
 pub(crate) mod libtonode_environment {
