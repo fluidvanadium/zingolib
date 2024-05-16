@@ -131,7 +131,7 @@ pub mod fixtures {
     }
 
     /// sends back and forth several times, including sends to transparent
-    pub async fn send_shield_cycle<CC>(n: u64, primary_pool: PoolType, secondary_pool: PoolType)
+    pub async fn send_shield_cycle<CC>(n: u64, primary_pool: PoolType)
     where
         CC: ConductChain,
     {
@@ -142,7 +142,7 @@ pub mod fixtures {
         let primary_address = primary.get_base_address(primary_pool).await;
 
         let secondary = environment.create_client().await;
-        let secondary_address = secondary.get_base_address(secondary_pool).await;
+        let secondary_address = secondary.get_base_address(Transparent).await;
 
         for _ in 0..n {
             primary

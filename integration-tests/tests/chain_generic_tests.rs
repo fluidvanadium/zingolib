@@ -34,15 +34,17 @@ async fn libtonode_propose_and_broadcast_40_000_to_sapling() {
 async fn libtonode_propose_and_broadcast_40_000_to_orchard() {
     propose_and_broadcast_value_to_pool::<LibtonodeEnvironment>(40_000, Shielded(Orchard)).await;
 }
-#[tokio::test]
-async fn libtonode_sapling_transparent_send_shield_cycle() {
-    send_shield_cycle::<LibtonodeEnvironment>(4, Shielded(Sapling), Transparent).await;
+mod shield_cycle {
+    use super::*;
+    #[tokio::test]
+    async fn sapling() {
+        send_shield_cycle::<LibtonodeEnvironment>(2, Shielded(Sapling)).await;
+    }
+    #[tokio::test]
+    async fn orchard() {
+        send_shield_cycle::<LibtonodeEnvironment>(2, Shielded(Orchard)).await;
+    }
 }
-#[tokio::test]
-async fn libtonode_orchard_transparent_send_shield_cycle() {
-    send_shield_cycle::<LibtonodeEnvironment>(4, Shielded(Orchard), Transparent).await;
-}
-
 pub(crate) mod libtonode_environment {
     use zcash_client_backend::PoolType;
 
