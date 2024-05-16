@@ -39,8 +39,8 @@ async fn libtonode_sapling_transparent_send_shield_cycle() {
     send_shield_cycle::<LibtonodeEnvironment>(4, Shielded(Sapling), Transparent).await;
 }
 #[tokio::test]
-async fn libtonode_orchard_sapling_send_shield_cycle() {
-    send_shield_cycle::<LibtonodeEnvironment>(4, Shielded(Orchard), Shielded(Sapling)).await;
+async fn libtonode_orchard_transparent_send_shield_cycle() {
+    send_shield_cycle::<LibtonodeEnvironment>(4, Shielded(Orchard), Transparent).await;
 }
 
 pub(crate) mod libtonode_environment {
