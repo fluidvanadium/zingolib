@@ -265,9 +265,7 @@ pub mod fixtures {
 
         environment.bump_chain().await;
         primary.do_sync(false).await.unwrap();
-        dbg!(primary.do_balance().await);
         secondary.do_sync(false).await.unwrap();
-        dbg!(secondary.do_balance().await);
 
         from_inputs::quick_send(
             &secondary,
@@ -278,7 +276,6 @@ pub mod fixtures {
 
         environment.bump_chain().await;
         primary.do_sync(false).await.unwrap();
-        dbg!(primary.do_balance().await);
     }
 
     /// overlooks a bunch of dust inputs to find a pair of inputs marginally big enough to send
