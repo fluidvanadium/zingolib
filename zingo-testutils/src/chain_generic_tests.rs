@@ -247,7 +247,7 @@ pub mod fixtures {
         // let secondary_address_sapling = secondary.get_base_address(Shielded(Sapling)).await;
         let secondary_address_orchard = get_base_address(&secondary, Shielded(Orchard)).await;
 
-        from_inputs::send(
+        from_inputs::quick_send(
             &primary,
             vec![
                 (secondary_address_orchard.as_str(), 1, None),
@@ -262,7 +262,7 @@ pub mod fixtures {
 
         dbg!(secondary.do_balance().await);
 
-        from_inputs::send(
+        from_inputs::quick_send(
             &secondary,
             vec![(primary_address_orchard.as_str(), 90_000, None)],
         )
@@ -289,7 +289,7 @@ pub mod fixtures {
         let secondary_address_sapling = get_base_address(&secondary, Shielded(Sapling)).await;
         let secondary_address_orchard = get_base_address(&secondary, Shielded(Orchard)).await;
 
-        from_inputs::send(
+        from_inputs::quick_send(
             &primary,
             vec![
                 (secondary_address_sapling.as_str(), 1_000, None),
@@ -314,7 +314,7 @@ pub mod fixtures {
 
         dbg!(secondary.do_balance().await);
 
-        from_inputs::send(
+        from_inputs::quick_send(
             &secondary,
             vec![(primary_address_orchard.as_str(), 5_001, None)],
         )
