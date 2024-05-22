@@ -39,8 +39,8 @@ pub enum InputSourceError {
     Shortfall(u64),
 }
 
-/// A trait representing the capability to query a data store for unspent transaction outputs
-/// belonging to a wallet.
+/// Implementation of LRZs interface for Inputs to a transaction.
+/// Queries for unspent value.
 impl InputSource for TransactionRecordsById {
     /// The type of errors produced by a wallet backend.
     /// IMPL: zingolib's error type. This could
