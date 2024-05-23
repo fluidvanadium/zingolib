@@ -247,7 +247,6 @@ pub mod fixtures {
         )
         .await;
 
-        secondary.do_sync(false).await.unwrap();
         check_client_balances!(secondary, o: 15_000 s: 15_000 t: 0);
 
         // expected fee: 3 MARGs
