@@ -225,25 +225,24 @@ pub mod fixtures {
 
         let secondary = environment.create_client().await;
         // let secondary_address_sapling = secondary.get_base_address(Shielded(Sapling)).await;
-        let secondary_address_sapling = get_base_address(&secondary, Shielded(Sapling)).await;
-        let secondary_address_orchard = get_base_address(&secondary, Shielded(Orchard)).await;
 
-        with_assertions::propose_send_bump_sync(
+        with_assertions::propose_send_bump_sync_recipient(
             &mut environment,
             &primary,
+            &secondary,
             vec![
-                (secondary_address_sapling.as_str(), 1_000, None),
-                (secondary_address_orchard.as_str(), 1_000, None),
-                (secondary_address_sapling.as_str(), 1_000, None),
-                (secondary_address_orchard.as_str(), 1_000, None),
-                (secondary_address_sapling.as_str(), 1_000, None),
-                (secondary_address_orchard.as_str(), 1_000, None),
-                (secondary_address_sapling.as_str(), 1_000, None),
-                (secondary_address_orchard.as_str(), 1_000, None),
-                (secondary_address_sapling.as_str(), 1_000, None),
-                (secondary_address_orchard.as_str(), 1_000, None),
-                (secondary_address_sapling.as_str(), 10_000, None),
-                (secondary_address_orchard.as_str(), 10_000, None),
+                (Shielded(Sapling), 1_000),
+                (Shielded(Sapling), 1_000),
+                (Shielded(Sapling), 1_000),
+                (Shielded(Sapling), 1_000),
+                (Shielded(Sapling), 1_000),
+                (Shielded(Orchard), 1_000),
+                (Shielded(Orchard), 1_000),
+                (Shielded(Orchard), 1_000),
+                (Shielded(Orchard), 1_000),
+                (Shielded(Orchard), 1_000),
+                (Shielded(Sapling), 10_000),
+                (Shielded(Orchard), 10_000),
             ],
         )
         .await;
@@ -251,6 +250,7 @@ pub mod fixtures {
         secondary.do_sync(false).await.unwrap();
         check_client_balances!(secondary, o: 15_000 s: 15_000 t: 0);
 
+        // expected fee: 3 MARGs
         from_inputs::send(
             &secondary,
             vec![(primary_address_orchard.as_str(), 5_001, None)],
