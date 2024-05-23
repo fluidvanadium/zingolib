@@ -221,8 +221,6 @@ pub mod fixtures {
         let mut environment = CC::setup().await;
         let primary = environment.fund_client_orchard(120_000).await;
 
-        let primary_address_orchard = get_base_address(&primary, Shielded(Orchard)).await;
-
         let secondary = environment.create_client().await;
         // let secondary_address_sapling = secondary.get_base_address(Shielded(Sapling)).await;
 
@@ -250,15 +248,14 @@ pub mod fixtures {
         check_client_balances!(secondary, o: 15_000 s: 15_000 t: 0);
 
         // expected fee: 3 MARGs
-        from_inputs::send(
+        with_assertions::propose_send_bump_sync_recipient(
+            &mut environment,
             &secondary,
-            vec![(primary_address_orchard.as_str(), 5_001, None)],
+            &primary,
+            vec![(Shielded(Orchard), 5_001)],
         )
-        .await
-        .unwrap();
+        .await;
 
-        environment.bump_chain().await;
-        secondary.do_sync(false).await.unwrap();
         check_client_balances!(secondary, o: 9_999 s: 5_000 t: 0);
     }
 
