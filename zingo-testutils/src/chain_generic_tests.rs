@@ -230,7 +230,8 @@ pub mod fixtures {
         let secondary_address_sapling = get_base_address(&secondary, Shielded(Sapling)).await;
         let secondary_address_orchard = get_base_address(&secondary, Shielded(Orchard)).await;
 
-        from_inputs::send(
+        with_assertions::propose_send_bump_sync(
+            &mut environment,
             &primary,
             vec![
                 (secondary_address_sapling.as_str(), 1_000, None),
@@ -247,12 +248,9 @@ pub mod fixtures {
                 (secondary_address_orchard.as_str(), 10_000, None),
             ],
         )
-        .await
-        .unwrap();
+        .await;
 
-        environment.bump_chain().await;
         secondary.do_sync(false).await.unwrap();
-
         check_client_balances!(secondary, o: 15_000 s: 15_000 t: 0);
 
         from_inputs::send(
