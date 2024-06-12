@@ -2052,6 +2052,12 @@ mod slow {
         // 5. Check the pending transaction is present
         // 5.1 Check notes
 
+        dbg!(
+            recipient
+                .query_for_ids(zingolib::wallet::notes::query::OutputQuery::any())
+                .await
+        );
+
         let notes = recipient.do_list_notes(true).await;
         // Has a new (pending) unspent note (the change)
         assert_eq!(notes["unspent_orchard_notes"].len(), 1);
