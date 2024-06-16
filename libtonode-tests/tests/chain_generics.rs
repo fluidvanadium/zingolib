@@ -67,6 +67,10 @@ mod chain_generics {
     async fn note_selection_order() {
         fixtures::note_selection_order::<LibtonodeEnvironment>().await;
     }
+    #[tokio::test]
+    async fn sapling_to_sapling() {
+        fixtures::sapling_to_sapling::<LibtonodeEnvironment>().await;
+    }
     mod environment {
         use zcash_client_backend::PoolType;
 
