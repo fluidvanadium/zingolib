@@ -464,4 +464,14 @@ pub mod fixtures {
             expected_inputs_for_transaction_2 as usize
         );
     }
+
+    pub async fn sapling_to_sapling<CC>()
+    where
+        CC: ConductChain,
+    {
+        let mut environment = CC::setup().await;
+
+        let primary = environment.fund_client_orchard(100_000).await;
+        let secondary = environment.create_client().await;
+    }
 }
