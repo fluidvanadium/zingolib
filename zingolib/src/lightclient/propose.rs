@@ -14,6 +14,7 @@ use thiserror::Error;
 
 use crate::data::proposal::extract_sapling_change;
 use crate::data::proposal::proposal_is_sanitary;
+use crate::data::proposal::request_sanitized_proposal;
 use crate::data::proposal::ProportionalFeeProposal;
 use crate::data::proposal::ProportionalFeeShieldProposal;
 use crate::data::proposal::ZingoProposal;
@@ -140,7 +141,7 @@ impl LightClient {
         .map_err(ProposeSendError::Proposal)
     }
 
-    /// ...
+    /// remove sapling change from the proposal, as it will be handled specially
     pub(crate) async fn create_sanitized_send_proposal(
         &self,
         request: TransactionRequest,
@@ -152,18 +153,14 @@ impl LightClient {
         if sapling_changes.is_empty() {
             return Ok(first_proposal);
         } else {
-            // request.payments().insert(
-            //     9,
-            //     Payment {
-            //         recipient_address: receiver.recipient_address,
-            //         amount: 0,
-            //         memo: None,
-            //         label: None,
-            //         message: None,
-            //         other_params: vec![],
-            //     },
-            // );
-            let second_proposal = self.create_unsanitary_send_proposal(request).await?;
+            let sanitized_request = request_sanitized_proposal(
+                sapling_changes,
+                request,
+                self.wallet.wallet_capability().first_sapling_address(),
+            )?;
+            let second_proposal = self
+                .create_unsanitary_send_proposal(sanitized_request)
+                .await?;
             if proposal_is_sanitary(&second_proposal) {
                 return Ok(second_proposal);
             } else {
