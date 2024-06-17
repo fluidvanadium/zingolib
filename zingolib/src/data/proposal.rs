@@ -19,6 +19,7 @@ pub type ProportionalFeeProposal =
     Proposal<transaction::fees::zip317::FeeRule, zcash_client_backend::wallet::NoteId>;
 
 /// confirm that there are no sapling changes in it
+/// TodO: unit test this again
 pub(crate) fn proposal_is_sanitary(proposal: ProportionalFeeProposal) -> bool {
     !proposal.steps().iter().any(|step| {
         step.balance().proposed_change().iter().any(|change_value| {
@@ -96,8 +97,9 @@ mod tests {
         );
     }
 
+    // TodO: another one of these for the other case
     #[tokio::test]
-    async fn sanitize_proposal() {
+    async fn proposal_is_sanitary() {
         let proposal = mocks::proposal::ProposalBuilder::default().build();
 
         assert!(crate::data::proposal::proposal_is_sanitary(proposal));
