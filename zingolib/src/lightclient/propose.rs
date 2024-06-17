@@ -109,7 +109,7 @@ impl LightClient {
 
     /// EXTRA CAREFUL: MAY CAUSE LOSS OF FUNDS
     /// Sapling Change is sent to an implicit internal address not yet scanned by Zingo. Before using it, we MUST sanitize proposal to ensure it does not contain sapling change.
-    async fn create_send_proposal(
+    async fn create_unsanitary_send_proposal(
         &self,
         request: TransactionRequest,
     ) -> Result<ProportionalFeeProposal, ProposeSendError> {
@@ -144,11 +144,13 @@ impl LightClient {
         &self,
         request: TransactionRequest,
     ) -> Result<ProportionalFeeProposal, ProposeSendError> {
-        let first_proposal = self.create_send_proposal(request.clone()).await?;
+        let first_proposal = self
+            .create_unsanitary_send_proposal(request.clone())
+            .await?;
         if proposal_is_sanitary(&first_proposal) {
             return Ok(first_proposal);
         } else {
-            let second_proposal = self.create_send_proposal(request).await?;
+            let second_proposal = self.create_unsanitary_send_proposal(request).await?;
             if proposal_is_sanitary(&second_proposal) {
                 return Ok(second_proposal);
             } else {
@@ -203,7 +205,7 @@ impl LightClient {
         &self,
         request: TransactionRequest,
     ) -> Result<ProportionalFeeProposal, ProposeSendError> {
-        let proposal = self.create_send_proposal(request).await?;
+        let proposal = self.create_sanitized_send_proposal(request).await?;
         self.store_proposal(ZingoProposal::Transfer(proposal.clone()))
             .await;
         Ok(proposal)
@@ -226,7 +228,7 @@ impl LightClient {
             memo,
         )])
         .map_err(ProposeSendError::TransactionRequestFailed)?;
-        let proposal = self.create_send_proposal(request).await?;
+        let proposal = self.create_sanitized_send_proposal(request).await?;
         self.store_proposal(ZingoProposal::Transfer(proposal.clone()))
             .await;
         Ok(proposal)
@@ -253,7 +255,7 @@ impl LightClient {
             confirmed_shielded_balance,
             None,
         )])?;
-        let failing_proposal = self.create_send_proposal(request).await;
+        let failing_proposal = self.create_unsanitary_send_proposal(request).await;
 
         let shortfall = match failing_proposal {
             Err(ProposeSendError::Proposal(
