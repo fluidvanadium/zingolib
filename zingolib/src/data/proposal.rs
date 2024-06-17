@@ -2,7 +2,7 @@
 
 use std::convert::Infallible;
 
-use zcash_client_backend::proposal::Proposal;
+use zcash_client_backend::{proposal::Proposal, zip321::TransactionRequest};
 use zcash_primitives::transaction::{
     self,
     components::amount::{BalanceError, NonNegativeAmount},
@@ -43,6 +43,31 @@ pub(crate) fn extract_sapling_change(
                 })
         })
         .collect::<Vec<&zcash_client_backend::fees::ChangeValue>>()
+}
+
+/// TodO: unit test this
+pub(crate) fn request_sanitized_proposal(
+    proposal: &ProportionalFeeProposal,
+    request: TransactionRequest,
+    change_sapling_address: sapling_crypto::PaymentAddress,
+) -> TransactionRequest {
+    let sapling_changes = extract_sapling_change(proposal);
+    let mut payments: Vec<zcash_client_backend::zip321::Payment> = request
+        .payments()
+        .values()
+        .map(|payment| payment.clone())
+        .collect();
+    for sapling_change in sapling_changes {
+        payments.push(zcash_client_backend::zip321::Payment {
+            recipient_address: zcash_keys::address::Address::Sapling(change_sapling_address),
+            amount: sapling_change.value(),
+            memo: sapling_change.memo().map(|ref_memo| ref_memo.clone()),
+            label: None,
+            message: None,
+            other_params: vec![],
+        });
+    }
+    TransactionRequest::new(payments).unwrap()
 }
 
 /// A proposed shielding.
