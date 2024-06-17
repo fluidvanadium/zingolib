@@ -20,7 +20,7 @@ pub type ProportionalFeeProposal =
 
 /// confirm that there are no sapling changes in it
 /// TodO: unit test this again
-pub(crate) fn proposal_is_sanitary(proposal: ProportionalFeeProposal) -> bool {
+pub(crate) fn proposal_is_sanitary(proposal: &ProportionalFeeProposal) -> bool {
     !proposal.steps().iter().any(|step| {
         step.balance().proposed_change().iter().any(|change_value| {
             change_value.output_pool() == zcash_client_backend::ShieldedProtocol::Sapling
@@ -102,6 +102,6 @@ mod tests {
     async fn proposal_is_sanitary() {
         let proposal = mocks::proposal::ProposalBuilder::default().build();
 
-        assert!(crate::data::proposal::proposal_is_sanitary(proposal));
+        assert!(crate::data::proposal::proposal_is_sanitary(&proposal));
     }
 }

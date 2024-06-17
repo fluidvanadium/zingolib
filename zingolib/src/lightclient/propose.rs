@@ -12,6 +12,7 @@ use zcash_primitives::{memo::MemoBytes, transaction::components::amount::NonNega
 
 use thiserror::Error;
 
+use crate::data::proposal::proposal_is_sanitary;
 use crate::data::proposal::ProportionalFeeProposal;
 use crate::data::proposal::ProportionalFeeShieldProposal;
 use crate::data::proposal::ZingoProposal;
@@ -70,8 +71,11 @@ pub enum ProposeSendError {
     #[error("send all is transferring no value. only enough funds to pay the fees!")]
     ZeroValueSendAll,
     /// failed to calculate balance.
-    #[error("failed to calculated balance. {0}")]
+    #[error("failed to calculate balance. {0}")]
     BalanceError(#[from] crate::wallet::error::BalanceError),
+    /// failed to sanitize proposal.
+    #[error("failed to sanitize proposal. (sapling change error)")]
+    Sanitize,
 }
 
 /// Errors that can result from do_propose
@@ -140,7 +144,17 @@ impl LightClient {
         &self,
         request: TransactionRequest,
     ) -> Result<ProportionalFeeProposal, ProposeSendError> {
-        self.create_send_proposal(request).await
+        let first_proposal = self.create_send_proposal(request.clone()).await?;
+        if proposal_is_sanitary(&first_proposal) {
+            return Ok(first_proposal);
+        } else {
+            let second_proposal = self.create_send_proposal(request).await?;
+            if proposal_is_sanitary(&second_proposal) {
+                return Ok(second_proposal);
+            } else {
+                return Err(ProposeSendError::Sanitize);
+            }
+        }
     }
 
     /// The shield operation consumes a proposal that transfers value
