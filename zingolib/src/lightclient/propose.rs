@@ -103,10 +103,9 @@ impl LightClient {
         *latest_proposal_lock = Some(proposal);
     }
 
-    /// Unstable function to expose the zip317 interface for development
-    // TOdo: add correct functionality and doc comments / tests
-    // TODO: Add migrate_sapling_to_orchard argument
-    pub(crate) async fn create_send_proposal(
+    /// EXTRA CAREFUL: MAY CAUSE LOSS OF FUNDS
+    /// Sapling Change is sent to an implicit internal address not yet scanned by Zingo. Before using it, we MUST sanitize proposal to ensure it does not contain sapling change.
+    async fn create_send_proposal(
         &self,
         request: TransactionRequest,
     ) -> Result<ProportionalFeeProposal, ProposeSendError> {
@@ -135,6 +134,15 @@ impl LightClient {
         )
         .map_err(ProposeSendError::Proposal)
     }
+
+    /// ...
+    pub(crate) async fn create_sanitized_send_proposal(
+        &self,
+        request: TransactionRequest,
+    ) -> Result<ProportionalFeeProposal, ProposeSendError> {
+        self.create_send_proposal(request).await
+    }
+
     /// The shield operation consumes a proposal that transfers value
     /// into the Orchard pool.
     ///

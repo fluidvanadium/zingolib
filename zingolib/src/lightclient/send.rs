@@ -335,7 +335,7 @@ pub mod send_with_proposal {
             &self,
             request: TransactionRequest,
         ) -> Result<NonEmpty<TxId>, QuickSendError> {
-            let proposal = self.create_send_proposal(request).await?;
+            let proposal = self.create_sanitized_send_proposal(request).await?;
             Ok(self.complete_and_broadcast::<NoteId>(&proposal).await?)
         }
 
