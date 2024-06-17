@@ -17,6 +17,16 @@ use zcash_primitives::transaction::{
 /// <https://zips.z.cash/zip-0320>
 pub type ProportionalFeeProposal =
     Proposal<transaction::fees::zip317::FeeRule, zcash_client_backend::wallet::NoteId>;
+
+/// confirm that there are no sapling changes in it
+pub(crate) fn proposal_is_sanitary(proposal: ProportionalFeeProposal) -> bool {
+    !proposal.steps().iter().any(|step| {
+        step.balance().proposed_change().iter().any(|change_value| {
+            change_value.output_pool() == zcash_client_backend::ShieldedProtocol::Sapling
+        })
+    })
+}
+
 /// A proposed shielding.
 /// The zcash_client_backend Proposal type exposes a "NoteRef" generic
 /// parameter to track Shielded inputs to the proposal these are
@@ -84,5 +94,12 @@ mod tests {
             super::total_fee(&proposal).unwrap(),
             NonNegativeAmount::from_u64(20_000).unwrap()
         );
+    }
+
+    #[tokio::test]
+    async fn sanitize_proposal() {
+        let proposal = mocks::proposal::ProposalBuilder::default().build();
+
+        assert!(crate::data::proposal::proposal_is_sanitary(proposal));
     }
 }

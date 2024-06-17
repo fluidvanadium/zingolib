@@ -143,16 +143,6 @@ impl LightClient {
         self.create_send_proposal(request).await
     }
 
-    /// confirm that there are no sapling changes in it
-    pub(crate) fn proposal_is_sanitary(proposal: ProportionalFeeProposal) -> bool {
-        !proposal.steps().iter().any(|step| {
-            step.balance()
-                .proposed_change()
-                .iter()
-                .any(|change_value| change_value.output_pool() == ShieldedProtocol::Sapling)
-        })
-    }
-
     /// The shield operation consumes a proposal that transfers value
     /// into the Orchard pool.
     ///
@@ -305,7 +295,7 @@ impl LightClient {
 }
 
 #[cfg(test)]
-mod shielding {
+mod tests {
     use crate::lightclient::propose::ProposeShieldError;
 
     async fn create_basic_client() -> crate::lightclient::LightClient {
