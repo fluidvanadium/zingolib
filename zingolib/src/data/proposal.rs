@@ -46,28 +46,40 @@ pub(crate) fn extract_sapling_change(
 }
 
 /// TodO: unit test this
+/// Ok(()): proposal did not contain sapling change
+/// Err(
+///     Ok(TransactionRequest): fixed request
+///     Err(): zip321 error
 pub(crate) fn request_sanitized_proposal(
     proposal: &ProportionalFeeProposal,
     request: TransactionRequest,
     change_sapling_address: sapling_crypto::PaymentAddress,
-) -> TransactionRequest {
+) -> Result<(), Result<TransactionRequest, zcash_client_backend::zip321::Zip321Error>> {
     let sapling_changes = extract_sapling_change(proposal);
-    let mut payments: Vec<zcash_client_backend::zip321::Payment> = request
-        .payments()
-        .values()
-        .map(|payment| payment.clone())
-        .collect();
-    for sapling_change in sapling_changes {
-        payments.push(zcash_client_backend::zip321::Payment {
-            recipient_address: zcash_keys::address::Address::Sapling(change_sapling_address),
-            amount: sapling_change.value(),
-            memo: sapling_change.memo().map(|ref_memo| ref_memo.clone()),
-            label: None,
-            message: None,
-            other_params: vec![],
-        });
+    if sapling_changes.is_empty() {
+        Ok(())
+    } else {
+        Err({
+            let mut payments: Vec<zcash_client_backend::zip321::Payment> = request
+                .payments()
+                .values()
+                .map(|payment| payment.clone())
+                .collect();
+            for sapling_change in sapling_changes {
+                payments.push(zcash_client_backend::zip321::Payment {
+                    recipient_address: zcash_keys::address::Address::Sapling(
+                        change_sapling_address,
+                    ),
+                    amount: sapling_change.value(),
+                    memo: sapling_change.memo().map(|ref_memo| ref_memo.clone()),
+                    label: None,
+                    message: None,
+                    other_params: vec![],
+                });
+            }
+            TransactionRequest::new(payments)
+        })
     }
-    TransactionRequest::new(payments).unwrap()
 }
 
 /// A proposed shielding.
