@@ -19,13 +19,30 @@ pub type ProportionalFeeProposal =
     Proposal<transaction::fees::zip317::FeeRule, zcash_client_backend::wallet::NoteId>;
 
 /// confirm that there are no sapling changes in it
-/// TodO: unit test this again
-pub(crate) fn extract_sapling_change(proposal: &ProportionalFeeProposal) -> bool {
+pub(crate) fn proposal_is_sanitary(proposal: &ProportionalFeeProposal) -> bool {
     !proposal.steps().iter().any(|step| {
         step.balance().proposed_change().iter().any(|change_value| {
             change_value.output_pool() == zcash_client_backend::ShieldedProtocol::Sapling
         })
     })
+}
+
+/// TodO: unit test this
+pub(crate) fn extract_sapling_change(
+    proposal: &ProportionalFeeProposal,
+) -> Vec<&zcash_client_backend::fees::ChangeValue> {
+    proposal
+        .steps()
+        .iter()
+        .flat_map(|step| {
+            step.balance()
+                .proposed_change()
+                .iter()
+                .filter(|change_value| {
+                    change_value.output_pool() == zcash_client_backend::ShieldedProtocol::Sapling
+                })
+        })
+        .collect::<Vec<&zcash_client_backend::fees::ChangeValue>>()
 }
 
 /// A proposed shielding.
@@ -102,6 +119,6 @@ mod tests {
     async fn proposal_is_sanitary() {
         let proposal = mocks::proposal::ProposalBuilder::default().build();
 
-        assert!(crate::data::proposal::extract_sapling_change(&proposal));
+        assert!(crate::data::proposal::proposal_is_sanitary(&proposal));
     }
 }

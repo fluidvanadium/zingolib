@@ -13,6 +13,7 @@ use zcash_primitives::{memo::MemoBytes, transaction::components::amount::NonNega
 use thiserror::Error;
 
 use crate::data::proposal::extract_sapling_change;
+use crate::data::proposal::proposal_is_sanitary;
 use crate::data::proposal::ProportionalFeeProposal;
 use crate::data::proposal::ProportionalFeeShieldProposal;
 use crate::data::proposal::ZingoProposal;
@@ -147,7 +148,8 @@ impl LightClient {
         let first_proposal = self
             .create_unsanitary_send_proposal(request.clone())
             .await?;
-        if extract_sapling_change(&first_proposal) {
+        let sapling_changes = extract_sapling_change(&first_proposal);
+        if sapling_changes.is_empty() {
             return Ok(first_proposal);
         } else {
             // request.payments().insert(
@@ -162,7 +164,7 @@ impl LightClient {
             //     },
             // );
             let second_proposal = self.create_unsanitary_send_proposal(request).await?;
-            if extract_sapling_change(&second_proposal) {
+            if proposal_is_sanitary(&second_proposal) {
                 return Ok(second_proposal);
             } else {
                 return Err(ProposeSendError::Sanitize);
