@@ -187,6 +187,9 @@ pub mod send_with_proposal {
         Broadcast(String),
         #[error("Sending to exchange addresses is not supported yet!")]
         ExchangeAddressesNotSupported,
+        /// failed to sanitize proposal.
+        #[error("proposal is unsanitary! previous checks must have failed")]
+        UnsanitaryProposal,
     }
 
     #[allow(missing_docs)] // error types document themselves
@@ -223,6 +226,11 @@ pub mod send_with_proposal {
             &self,
             proposal: &Proposal<zcash_primitives::transaction::fees::zip317::FeeRule, NoteRef>,
         ) -> Result<NonEmpty<TxId>, CompleteAndBroadcastError> {
+            // TODo! waiting for enum_dispatch to land
+            // if !crate::data::proposal::proposal_is_sanitary(proposal) {
+            //     return Err(CompleteAndBroadcastError::UnsanitaryProposal);
+            // }
+
             if self
                 .wallet
                 .transaction_context
