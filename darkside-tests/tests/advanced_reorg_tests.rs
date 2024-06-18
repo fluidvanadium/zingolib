@@ -557,9 +557,14 @@ async fn reorg_changes_outgoing_tx_height() {
 
     // Send 100000 zatoshi to some address
     let amount: u64 = 100000;
-    let sent_tx_id = from_inputs::send(&light_client, [(recipient_string, amount, None)].to_vec())
-        .await
-        .unwrap();
+    // FIXME: fails to create a sent valuetransfer with quick_send
+    let sent_tx_id =
+        from_inputs::quick_send(&light_client, [(recipient_string, amount, None)].to_vec())
+            .await
+            .unwrap();
+    // let sent_tx_id = from_inputs::send(&light_client, [(recipient_string, amount, None)].to_vec())
+    //     .await
+    //     .unwrap();
 
     println!("SENT TX ID: {:?}", sent_tx_id);
 
@@ -686,7 +691,6 @@ async fn reorg_changes_outgoing_tx_height() {
 }
 
 async fn prepare_changes_outgoing_tx_height_before_reorg(uri: http::Uri) -> Result<(), String> {
-    dbg!(&uri);
     let connector = DarksideConnector(uri.clone());
 
     let mut client = connector.get_client().await.unwrap();
@@ -795,9 +799,10 @@ async fn reorg_expires_outgoing_tx_height() {
 
     // Send 100000 zatoshi to some address
     let amount: u64 = 100000;
-    let sent_tx_id = from_inputs::send(&light_client, [(recipient_string, amount, None)].to_vec())
-        .await
-        .unwrap();
+    let sent_tx_id =
+        from_inputs::quick_send(&light_client, [(recipient_string, amount, None)].to_vec())
+            .await
+            .unwrap();
 
     println!("SENT TX ID: {:?}", sent_tx_id);
 
@@ -975,9 +980,10 @@ async fn reorg_changes_outgoing_tx_index() {
 
     // Send 100000 zatoshi to some address
     let amount: u64 = 100000;
-    let sent_tx_id = from_inputs::send(&light_client, [(recipient_string, amount, None)].to_vec())
-        .await
-        .unwrap();
+    let sent_tx_id =
+        from_inputs::quick_send(&light_client, [(recipient_string, amount, None)].to_vec())
+            .await
+            .unwrap();
 
     println!("SENT TX ID: {:?}", sent_tx_id);
 
