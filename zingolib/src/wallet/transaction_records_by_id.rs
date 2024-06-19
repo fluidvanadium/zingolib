@@ -677,10 +677,10 @@ impl TransactionRecordsById {
                     .status
                     .is_confirmed_before_or_at(&anchor_height)
                 {
-                    if let Ok(lalala) =
+                    if let Ok(id_and_value) =
                         transaction_record.get_spendable_note_ids_and_values(sources, exclude)
                     {
-                        lalala
+                        id_and_value
                     } else {
                         missing_output_index.push(transaction_record.txid);
                         vec![]
