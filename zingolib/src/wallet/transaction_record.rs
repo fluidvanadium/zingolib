@@ -3,7 +3,6 @@
 //! by its`nature this evolves through, different states of completeness.
 
 use crate::{
-    error::ZingoLibResult,
     wallet::notes::{interface::OutputConstructor, OutputId},
 };
 use std::io::{self, Read, Write};
