@@ -371,7 +371,7 @@ impl TransactionRecord {
         &self,
         sources: &[zcash_client_backend::ShieldedProtocol],
         exclude: &[NoteId],
-    ) -> ZingoLibResult<Vec<(NoteId, u64)>> {
+    ) -> Result<Vec<(NoteId, u64)>, ()> {
         let mut all = vec![];
         let mut missing_output_index = false;
         if sources.contains(&Sapling) {
@@ -405,7 +405,7 @@ impl TransactionRecord {
             });
         }
         if missing_output_index {
-            Err(ZingoLibError::MissingOutputIndexInThisTx)
+            Err(())
         } else {
             Ok(all)
         }
