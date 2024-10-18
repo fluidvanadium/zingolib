@@ -1,3 +1,4 @@
+use darkside_tests::utils::scenarios::DarksideEnvironment;
 use darkside_tests::utils::{
     prepare_darksidewalletd, update_tree_states_for_transaction, DarksideConnector, DarksideHandler,
 };
@@ -5,6 +6,7 @@ use tokio::time::sleep;
 use zingolib::config::RegtestNetwork;
 use zingolib::get_base_address_macro;
 use zingolib::lightclient::PoolBalances;
+use zingolib::testutils::chain_generics::conduct_chain::ConductChain as _;
 use zingolib::testutils::{lightclient::from_inputs, scenarios::setup::ClientBuilder};
 use zingolib::testvectors::seeds::DARKSIDE_SEED;
 
@@ -206,4 +208,12 @@ async fn sent_transaction_reorged_into_mempool() {
         loaded_client.do_balance().await.orchard_balance,
         Some(100000000)
     );
+}
+
+#[tokio::test]
+async fn evicted_transaction_is_rebroadcast() {
+    let mut environment = DarksideEnvironment::setup().await;
+
+    let primary = environment.fund_client_orchard(1_000_000).await;
+    let secondary = environment.create_client().await;
 }
