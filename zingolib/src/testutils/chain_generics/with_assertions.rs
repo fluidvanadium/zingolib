@@ -10,7 +10,29 @@ use crate::testutils::{
 };
 use zingo_status::confirmation_status::ConfirmationStatus;
 
-/// sends to any combo of recipient clients checks that each recipient also received the expected balances
+/// this function handles inputs and their lifetimes to create a proposal
+async fn to_clients_proposal(
+    sender: &LightClient,
+    sends: &Vec<(&LightClient, PoolType, u64, Option<&str>)>,
+) -> zcash_client_backend::proposal::Proposal<
+    zcash_primitives::transaction::fees::zip317::FeeRule,
+    zcash_client_backend::wallet::NoteId,
+> {
+    let mut subraw_receivers = vec![];
+    for (recipient, pooltype, amount, memo_str) in sends.clone() {
+        let address = get_base_address(recipient, pooltype).await;
+        subraw_receivers.push((address, amount, memo_str));
+    }
+
+    let raw_receivers = subraw_receivers
+        .iter()
+        .map(|(address, amount, opt_memo)| (address.as_str(), *amount, *opt_memo))
+        .collect();
+
+    from_inputs::propose(sender, raw_receivers).await.unwrap()
+}
+
+/// sends to any combo of recipient clients checks that each recipient also recieved the expected balances
 /// test-only generic
 /// NOTICE this function bumps the chain and syncs the client
 /// only compatible with zip317
@@ -25,18 +47,7 @@ pub async fn propose_send_bump_sync_all_recipients<CC>(
 where
     CC: ConductChain,
 {
-    let mut subraw_receivers = vec![];
-    for (recipient, pooltype, amount, memo_str) in sends.clone() {
-        let address = get_base_address(recipient, pooltype).await;
-        subraw_receivers.push((address, amount, memo_str));
-    }
-
-    let raw_receivers = subraw_receivers
-        .iter()
-        .map(|(address, amount, opt_memo)| (address.as_str(), *amount, *opt_memo))
-        .collect();
-
-    let proposal = from_inputs::propose(sender, raw_receivers).await.unwrap();
+    let proposal = to_clients_proposal(sender, &sends).await;
 
     let txids = sender
         .complete_and_broadcast_stored_proposal()

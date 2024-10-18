@@ -1,3 +1,5 @@
+#![allow(unused_imports)] // used in tests
+
 use proptest::proptest;
 use tokio::runtime::Runtime;
 
