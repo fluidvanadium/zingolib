@@ -3,6 +3,7 @@ use darkside_tests::utils::{
     prepare_darksidewalletd, update_tree_states_for_transaction, DarksideConnector, DarksideHandler,
 };
 use tokio::time::sleep;
+use zcash_client_backend::PoolType;
 use zingolib::config::RegtestNetwork;
 use zingolib::get_base_address_macro;
 use zingolib::lightclient::PoolBalances;
@@ -216,4 +217,26 @@ async fn evicted_transaction_is_rebroadcast() {
 
     let primary = environment.fund_client_orchard(1_000_000).await;
     let secondary = environment.create_client().await;
+
+    let proposal = zingolib::testutils::chain_generics::with_assertions::to_clients_proposal(
+        &primary,
+        &vec![(
+            &secondary,
+            PoolType::Shielded(zcash_client_backend::ShieldedProtocol::Orchard),
+            100_000,
+            None,
+        )],
+    )
+    .await;
+
+    let txids = &primary
+        .complete_and_broadcast_stored_proposal()
+        .await
+        .unwrap();
+
+    // environment
+    //     .darkside_connector
+    //     .clear_incoming_transactions()
+    //     .await
+    //     .unwrap();
 }

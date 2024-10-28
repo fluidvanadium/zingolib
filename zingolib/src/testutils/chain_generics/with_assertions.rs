@@ -11,7 +11,7 @@ use crate::testutils::{
 use zingo_status::confirmation_status::ConfirmationStatus;
 
 /// this function handles inputs and their lifetimes to create a proposal
-async fn to_clients_proposal(
+pub async fn to_clients_proposal(
     sender: &LightClient,
     sends: &Vec<(&LightClient, PoolType, u64, Option<&str>)>,
 ) -> zcash_client_backend::proposal::Proposal<
