@@ -1,14 +1,18 @@
+use darkside_tests::utils::prepare_darksidewalletd;
 use darkside_tests::utils::scenarios::DarksideEnvironment;
-use darkside_tests::utils::{
-    prepare_darksidewalletd, update_tree_states_for_transaction, DarksideConnector, DarksideHandler,
-};
+use darkside_tests::utils::update_tree_states_for_transaction;
+use darkside_tests::utils::DarksideConnector;
+use darkside_tests::utils::DarksideHandler;
 use tokio::time::sleep;
-use zcash_client_backend::PoolType;
+use zcash_client_backend::PoolType::Shielded;
+use zcash_client_backend::ShieldedProtocol::Orchard;
 use zingolib::config::RegtestNetwork;
 use zingolib::get_base_address_macro;
 use zingolib::lightclient::PoolBalances;
 use zingolib::testutils::chain_generics::conduct_chain::ConductChain as _;
-use zingolib::testutils::{lightclient::from_inputs, scenarios::setup::ClientBuilder};
+use zingolib::testutils::chain_generics::with_assertions::to_clients_proposal;
+use zingolib::testutils::lightclient::from_inputs;
+use zingolib::testutils::scenarios::setup::ClientBuilder;
 use zingolib::testvectors::seeds::DARKSIDE_SEED;
 
 #[tokio::test]
@@ -218,14 +222,9 @@ async fn evicted_transaction_is_rebroadcast() {
     let primary = environment.fund_client_orchard(1_000_000).await;
     let secondary = environment.create_client().await;
 
-    let proposal = zingolib::testutils::chain_generics::with_assertions::to_clients_proposal(
+    let proposal = to_clients_proposal(
         &primary,
-        &vec![(
-            &secondary,
-            PoolType::Shielded(zcash_client_backend::ShieldedProtocol::Orchard),
-            100_000,
-            None,
-        )],
+        &vec![(&secondary, Shielded(Orchard), 100_000, None)],
     )
     .await;
 
