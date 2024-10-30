@@ -6,9 +6,11 @@ use darkside_tests::utils::DarksideHandler;
 use tokio::time::sleep;
 use zcash_client_backend::PoolType::Shielded;
 use zcash_client_backend::ShieldedProtocol::Orchard;
+use zingo_status::confirmation_status::ConfirmationStatus;
 use zingolib::config::RegtestNetwork;
 use zingolib::get_base_address_macro;
 use zingolib::lightclient::PoolBalances;
+use zingolib::testutils::assertions::assert_record_fee_and_status;
 use zingolib::testutils::chain_generics::conduct_chain::ConductChain as _;
 use zingolib::testutils::chain_generics::with_assertions::to_clients_proposal;
 use zingolib::testutils::lightclient::from_inputs;
@@ -233,9 +235,13 @@ async fn evicted_transaction_is_rebroadcast() {
         .await
         .unwrap();
 
-    // environment
-    //     .darkside_connector
-    //     .clear_incoming_transactions()
-    //     .await
-    //     .unwrap();
+    let recorded_fee = assert_record_fee_and_status(
+        &primary,
+        &proposal,
+        &txids,
+        ConfirmationStatus::Transmitted(100_000.into()),
+    )
+    .await;
+
+    // environment.bump_chain().await;
 }
