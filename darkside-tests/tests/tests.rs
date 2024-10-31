@@ -234,6 +234,11 @@ async fn evicted_transaction_is_rebroadcast() {
         .await
         .unwrap();
 
+    println!(
+        "{:?}",
+        zingolib::testutils::lightclient::list_txids(&primary).await
+    );
+
     let recorded_fee = *zingolib::testutils::assertions::lookup_fees_with_proposal_check(
         &primary, &proposal, &txids,
     )

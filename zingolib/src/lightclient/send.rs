@@ -226,11 +226,39 @@ pub mod send_with_proposal {
                         .await
                         {
                             Ok(serverz_txid_string) => {
-                                txids.push(crate::utils::txid::compare_txid_to_string(
-                                    txid,
-                                    serverz_txid_string,
-                                    self.wallet.transaction_context.config.accept_server_txids,
-                                ));
+                                let mut chosen_txid = txid;
+                                match crate::utils::conversion::txid_from_hex_encoded_str(
+                                    serverz_txid_string.as_str(),
+                                ) {
+                                    Ok(reported_txid) => {
+                                        if txid != reported_txid {
+                                            // happens during darkside tests
+                                            println!(
+                                                "served txid {} does not match calulated txid {}",
+                                                reported_txid, txid,
+                                            );
+                                            if self
+                                                .wallet
+                                                .transaction_context
+                                                .config
+                                                .accept_server_txids
+                                            {
+                                                // now we reconfigure the tx_map to align with the server
+                                                chosen_txid = reported_txid;
+                                                tx_map.transaction_records_by_id.insert(
+                                                    chosen_txid,
+                                                    transaction_records_by_id.remove(&txid),
+                                                );
+                                            }
+                                        };
+                                    }
+                                    Err(e) => {
+                                        println!("server returned invalid txid {}", e);
+                                    }
+                                }
+
+                                txids.push(chosen_txid);
+
                                 transaction_record.status =
                                     ConfirmationStatus::Transmitted(current_height + 1);
 
