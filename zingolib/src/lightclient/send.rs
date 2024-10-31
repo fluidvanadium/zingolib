@@ -244,11 +244,17 @@ pub mod send_with_proposal {
                                                 .accept_server_txids
                                             {
                                                 // now we reconfigure the tx_map to align with the server
+                                                // switch the TransactionRecord to the new txid
                                                 chosen_txid = reported_txid;
-                                                tx_map.transaction_records_by_id.insert(
-                                                    chosen_txid,
-                                                    transaction_records_by_id.remove(&txid),
-                                                );
+                                                if let Some(transaction_record) = tx_map
+                                                    .transaction_records_by_id
+                                                    .remove(&txid)
+                                                    .as_ref()
+                                                {
+                                                    tx_map
+                                                        .transaction_records_by_id
+                                                        .insert(chosen_txid, *transaction_record);
+                                                }
                                             }
                                         };
                                     }
