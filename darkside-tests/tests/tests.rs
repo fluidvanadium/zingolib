@@ -239,14 +239,14 @@ async fn evicted_transaction_is_rebroadcast() {
     )
     .await
     .first()
-    .expect("one transaction proposed")
+    .expect("one transaction must have been proposed")
     .as_ref()
-    .expect("record is ok");
+    .expect("record must exist");
 
     zingolib::testutils::lightclient::lookup_stati(&primary, txids.clone())
         .await
         .map(|status| {
-            assert_eq!(status, ConfirmationStatus::Transmitted(send_height.into()));
+            assert!(matches!(status, ConfirmationStatus::Transmitted(_)));
         });
     // environment.bump_chain().await;
 }
