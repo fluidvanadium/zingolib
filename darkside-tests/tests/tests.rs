@@ -229,6 +229,13 @@ async fn evicted_transaction_is_rebroadcast() {
     )
     .await;
 
+    let mut send_height = primary
+        .wallet
+        .get_target_height_and_anchor_offset()
+        .await
+        .expect("primary must have a target height")
+        .0;
+
     let txids = &primary
         .complete_and_broadcast_stored_proposal()
         .await
@@ -251,7 +258,10 @@ async fn evicted_transaction_is_rebroadcast() {
     zingolib::testutils::lightclient::lookup_statuses(&primary, txids.clone())
         .await
         .map(|status| {
-            assert!(matches!(status, Some(ConfirmationStatus::Transmitted(_))));
+            assert!(matches!(
+                status,
+                Some(ConfirmationStatus::Transmitted(send_height))
+            ));
         });
 
     zingolib::testutils::lightclient::lookup_statuses(&secondary, txids.clone())
@@ -270,12 +280,33 @@ async fn evicted_transaction_is_rebroadcast() {
     zingolib::testutils::lightclient::lookup_statuses(&primary, txids.clone())
         .await
         .map(|status| {
-            assert!(matches!(status, Some(ConfirmationStatus::Transmitted(_))));
+            assert!(matches!(
+                status,
+                Some(ConfirmationStatus::Transmitted(send_height))
+            ));
         });
 
     zingolib::testutils::lightclient::lookup_statuses(&secondary, txids.clone())
         .await
         .map(|status| {
             assert!(matches!(status, None));
+        });
+
+    send_height = primary
+        .wallet
+        .get_target_height_and_anchor_offset()
+        .await
+        .expect("sender has a target height")
+        .0;
+
+    primary.do_sync(false).await;
+
+    zingolib::testutils::lightclient::lookup_statuses(&primary, txids.clone())
+        .await
+        .map(|status| {
+            assert!(matches!(
+                status,
+                Some(ConfirmationStatus::Transmitted(send_height))
+            ));
         });
 }
