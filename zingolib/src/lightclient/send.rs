@@ -216,7 +216,7 @@ pub mod send_with_proposal {
                 .cached_raw_transactions()
                 .clone();
             let mut txids = vec![];
-            for (txid, raw_tx) in calculated_tx_cache {
+            for (mut txid, raw_tx) in calculated_tx_cache {
                 let mut spend_status = None;
                 if let Some(&mut ref mut transaction_record) =
                     tx_map.transaction_records_by_id.get_mut(&txid)
@@ -262,6 +262,7 @@ pub mod send_with_proposal {
                                                         .transaction_records_by_id
                                                         .insert(chosen_txid, transaction_record);
                                                 }
+                                                txid = chosen_txid;
                                             }
                                         };
                                     }
