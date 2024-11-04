@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use darkside_tests::utils::prepare_darksidewalletd;
 use darkside_tests::utils::scenarios::DarksideEnvironment;
 use darkside_tests::utils::update_tree_states_for_transaction;
@@ -9,6 +11,7 @@ use zcash_client_backend::ShieldedProtocol::Orchard;
 use zingo_status::confirmation_status::ConfirmationStatus;
 use zingolib::config::RegtestNetwork;
 use zingolib::get_base_address_macro;
+use zingolib::lightclient::LightClient;
 use zingolib::lightclient::PoolBalances;
 use zingolib::testutils::chain_generics::conduct_chain::ConductChain as _;
 use zingolib::testutils::chain_generics::with_assertions::to_clients_proposal;
@@ -258,10 +261,10 @@ async fn evicted_transaction_is_rebroadcast() {
     zingolib::testutils::lightclient::lookup_statuses(&primary, txids.clone())
         .await
         .map(|status| {
-            assert!(matches!(
+            assert_eq!(
                 status,
-                Some(ConfirmationStatus::Transmitted(send_height))
-            ));
+                Some(ConfirmationStatus::Transmitted(send_height.into()))
+            );
         });
 
     zingolib::testutils::lightclient::lookup_statuses(&secondary, txids.clone())
@@ -280,10 +283,10 @@ async fn evicted_transaction_is_rebroadcast() {
     zingolib::testutils::lightclient::lookup_statuses(&primary, txids.clone())
         .await
         .map(|status| {
-            assert!(matches!(
+            assert_eq!(
                 status,
-                Some(ConfirmationStatus::Transmitted(send_height))
-            ));
+                Some(ConfirmationStatus::Transmitted(send_height.into()))
+            );
         });
 
     zingolib::testutils::lightclient::lookup_statuses(&secondary, txids.clone())
@@ -304,9 +307,12 @@ async fn evicted_transaction_is_rebroadcast() {
     zingolib::testutils::lightclient::lookup_statuses(&primary, txids.clone())
         .await
         .map(|status| {
-            assert!(matches!(
+            assert_eq!(
                 status,
-                Some(ConfirmationStatus::Transmitted(send_height))
-            ));
+                Some(ConfirmationStatus::Transmitted(send_height.into()))
+            );
         });
+
+    let ref_primary: Arc<LightClient> = Arc::new(primary);
+    LightClient::start_mempool_monitor(ref_primary);
 }
