@@ -235,7 +235,6 @@ pub mod send_with_proposal {
 
                                 transaction_record.status = new_status;
 
-                                let mut chosen_txid = txid;
                                 match crate::utils::conversion::txid_from_hex_encoded_str(
                                     serverz_txid_string.as_str(),
                                 ) {
@@ -254,15 +253,14 @@ pub mod send_with_proposal {
                                             {
                                                 // now we reconfigure the tx_map to align with the server
                                                 // switch the TransactionRecord to the new txid
-                                                chosen_txid = reported_txid;
                                                 if let Some(transaction_record) =
                                                     tx_map.transaction_records_by_id.remove(&txid)
                                                 {
                                                     tx_map
                                                         .transaction_records_by_id
-                                                        .insert(chosen_txid, transaction_record);
+                                                        .insert(reported_txid, transaction_record);
                                                 }
-                                                txid = chosen_txid;
+                                                txid = reported_txid;
                                             }
                                         };
                                     }
@@ -274,7 +272,7 @@ pub mod send_with_proposal {
 
                                 spend_status = Some((txid, new_status));
 
-                                txids.push(chosen_txid);
+                                txids.push(txid);
                             }
                             Err(server_err) => {
                                 return Err(BroadcastCachedTransactionsError::Broadcast(server_err))
