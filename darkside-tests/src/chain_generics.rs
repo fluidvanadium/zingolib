@@ -84,6 +84,11 @@ pub(crate) mod conduct_chain {
                 .clear_incoming_transactions()
                 .await
                 .unwrap();
+            self.darkside_connector
+                .stage_blocks_create(u64::from(self.staged_blockheight) as i32, 1, 0)
+                .await
+                .unwrap();
+            self.staged_blockheight = self.staged_blockheight + 1;
             loop {
                 let maybe_raw_tx = streamed_raw_txns.message().await.unwrap();
                 match maybe_raw_tx {
@@ -109,11 +114,6 @@ pub(crate) mod conduct_chain {
                     }
                 }
             }
-            self.darkside_connector
-                .stage_blocks_create(u64::from(self.staged_blockheight) as i32, 1, 0)
-                .await
-                .unwrap();
-            self.staged_blockheight = self.staged_blockheight + 1;
             self.apply_blocks(u64::from(self.staged_blockheight)).await;
         }
 

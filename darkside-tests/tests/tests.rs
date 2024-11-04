@@ -221,10 +221,14 @@ async fn sent_transaction_reorged_into_mempool() {
 
 #[tokio::test]
 async fn evicted_transaction_is_rebroadcast() {
+    std::env::set_var("RUST_BACKTRACE", "1");
+
     let mut environment = DarksideEnvironment::setup().await;
+    environment.bump_chain().await;
 
     let primary = environment.fund_client_orchard(1_000_000).await;
     let secondary = environment.create_client().await;
+    primary.do_sync(false).await;
 
     let proposal = to_clients_proposal(
         &primary,
