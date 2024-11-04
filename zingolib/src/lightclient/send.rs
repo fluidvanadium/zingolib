@@ -218,7 +218,8 @@ pub mod send_with_proposal {
             let mut txids = vec![];
             for (txid, raw_tx) in calculated_tx_cache {
                 let mut spend_status = None;
-                if let Some(transaction_record) = tx_map.transaction_records_by_id.get_mut(&txid) {
+                let mut option_transaction_record = tx_map.transaction_records_by_id.get_mut(&txid);
+                if let Some(&mut ref mut transaction_record) = option_transaction_record {
                     // only send the txid if its status is Calculated. when we do, change its status to Transmitted.
                     if matches!(transaction_record.status, ConfirmationStatus::Calculated(_)) {
                         match crate::grpc_connector::send_transaction(
@@ -233,6 +234,13 @@ pub mod send_with_proposal {
                                     serverz_txid_string.as_str(),
                                 ) {
                                     Ok(reported_txid) => {
+                                        transaction_record.status =
+                                            ConfirmationStatus::Transmitted(current_height + 1);
+
+                                        spend_status = Some((
+                                            transaction_record.txid,
+                                            transaction_record.status,
+                                        ));
                                         if txid != reported_txid {
                                             // happens during darkside tests
                                             println!(
@@ -248,30 +256,25 @@ pub mod send_with_proposal {
                                                 // now we reconfigure the tx_map to align with the server
                                                 // switch the TransactionRecord to the new txid
                                                 chosen_txid = reported_txid;
-                                                if let Some(transaction_record) = tx_map
-                                                    .transaction_records_by_id
-                                                    .remove(&txid)
-                                                    .as_ref()
+                                                drop(&mut *transaction_record);
+                                                drop(option_transaction_record);
+                                                if let Some(mut transaction_record) =
+                                                    tx_map.transaction_records_by_id.remove(&txid)
                                                 {
                                                     tx_map
                                                         .transaction_records_by_id
-                                                        .insert(chosen_txid, *transaction_record);
+                                                        .insert(chosen_txid, transaction_record);
                                                 }
                                             }
                                         };
                                     }
                                     Err(e) => {
                                         println!("server returned invalid txid {}", e);
+                                        todo!();
                                     }
                                 }
 
                                 txids.push(chosen_txid);
-
-                                transaction_record.status =
-                                    ConfirmationStatus::Transmitted(current_height + 1);
-
-                                spend_status =
-                                    Some((transaction_record.txid, transaction_record.status));
                             }
                             Err(server_err) => {
                                 return Err(BroadcastCachedTransactionsError::Broadcast(server_err))
