@@ -230,18 +230,16 @@ pub mod send_with_proposal {
                         .await
                         {
                             Ok(serverz_txid_string) => {
+                                let new_status =
+                                    ConfirmationStatus::Transmitted(current_height - 1);
+
+                                transaction_record.status = new_status;
+
                                 let mut chosen_txid = txid;
                                 match crate::utils::conversion::txid_from_hex_encoded_str(
                                     serverz_txid_string.as_str(),
                                 ) {
                                     Ok(reported_txid) => {
-                                        transaction_record.status =
-                                            ConfirmationStatus::Transmitted(current_height + 1);
-
-                                        spend_status = Some((
-                                            transaction_record.txid,
-                                            transaction_record.status,
-                                        ));
                                         if txid != reported_txid {
                                             // happens during darkside tests
                                             println!(
@@ -272,6 +270,8 @@ pub mod send_with_proposal {
                                         todo!();
                                     }
                                 }
+
+                                spend_status = Some((txid, new_status));
 
                                 txids.push(chosen_txid);
                             }
