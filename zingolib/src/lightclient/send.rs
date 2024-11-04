@@ -264,7 +264,6 @@ pub mod send_with_proposal {
                                         //         txid = reported_txid;
                                         //     }
                                         // };
-                                        txids.push(reported_txid);
                                     }
                                     Err(e) => {
                                         println!("server returned invalid txid {}", e);
@@ -273,6 +272,8 @@ pub mod send_with_proposal {
                                 }
 
                                 spend_status = Some((txid, new_status));
+
+                                txids.push(txid);
                             }
                             Err(server_err) => {
                                 return Err(BroadcastCachedTransactionsError::Broadcast(server_err))
