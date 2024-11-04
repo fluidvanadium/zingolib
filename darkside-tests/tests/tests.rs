@@ -259,5 +259,10 @@ async fn evicted_transaction_is_rebroadcast() {
         .map(|status| {
             assert!(matches!(status, None));
         });
-    // environment.bump_chain().await;
+
+    environment
+        .get_connector()
+        .clear_incoming_transactions()
+        .await;
+    environment.bump_chain().await;
 }
