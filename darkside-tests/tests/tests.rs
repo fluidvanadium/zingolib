@@ -263,6 +263,19 @@ async fn evicted_transaction_is_rebroadcast() {
     environment
         .get_connector()
         .clear_incoming_transactions()
-        .await;
+        .await
+        .unwrap();
     environment.bump_chain().await;
+
+    zingolib::testutils::lightclient::lookup_statuses(&primary, txids.clone())
+        .await
+        .map(|status| {
+            assert!(matches!(status, Some(ConfirmationStatus::Transmitted(_))));
+        });
+
+    zingolib::testutils::lightclient::lookup_statuses(&secondary, txids.clone())
+        .await
+        .map(|status| {
+            assert!(matches!(status, None));
+        });
 }
