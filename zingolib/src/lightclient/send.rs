@@ -58,6 +58,8 @@ pub mod send_with_proposal {
     pub enum BroadcastCachedTransactionsError {
         #[error("Cant broadcast: {0:?}")]
         Cache(#[from] TransactionCacheError),
+        #[error("Transaction not recorded. Call record_created_transactions first: {0:?}")]
+        Unrecorded(TxId),
         #[error("Couldnt fetch server height: {0:?}")]
         Height(String),
         #[error("Broadcast failed: {0:?}")]
@@ -216,8 +218,8 @@ pub mod send_with_proposal {
             let mut txids = vec![];
             for (txid, raw_tx) in calculated_tx_cache {
                 let mut spend_status = None;
-                // only send the txid if its status is Calculated. when we do, change its status to Transmitted.
                 if let Some(transaction_record) = tx_map.transaction_records_by_id.get_mut(&txid) {
+                    // only send the txid if its status is Calculated. when we do, change its status to Transmitted.
                     if matches!(transaction_record.status, ConfirmationStatus::Calculated(_)) {
                         match crate::grpc_connector::send_transaction(
                             self.get_server_uri(),
@@ -276,6 +278,8 @@ pub mod send_with_proposal {
                             }
                         };
                     }
+                } else {
+                    return Err(BroadcastCachedTransactionsError::Unrecorded(txid));
                 }
                 if let Some(s) = spend_status {
                     tx_map
