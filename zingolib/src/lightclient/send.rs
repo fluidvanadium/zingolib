@@ -239,31 +239,31 @@ pub mod send_with_proposal {
                                     serverz_txid_string.as_str(),
                                 ) {
                                     Ok(reported_txid) => {
-                                        #[cfg(feature = "darkside_tests")]
                                         // happens during darkside tests
-                                        if txid != reported_txid {
-                                            println!(
-                                                "served txid {} does not match calulated txid {}",
-                                                reported_txid, txid,
-                                            );
-                                            if self
-                                                .wallet
-                                                .transaction_context
-                                                .config
-                                                .accept_server_txids
-                                            {
-                                                // now we reconfigure the tx_map to align with the server
-                                                // switch the TransactionRecord to the new txid
-                                                if let Some(transaction_record) =
-                                                    tx_map.transaction_records_by_id.remove(&txid)
-                                                {
-                                                    tx_map
-                                                        .transaction_records_by_id
-                                                        .insert(reported_txid, transaction_record);
-                                                }
-                                                txid = reported_txid;
-                                            }
-                                        };
+                                        // #[cfg(feature = "darkside_tests")]
+                                        // if txid != reported_txid {
+                                        //     println!(
+                                        //         "served txid {} does not match calulated txid {}",
+                                        //         reported_txid, txid,
+                                        //     );
+                                        //     if self
+                                        //         .wallet
+                                        //         .transaction_context
+                                        //         .config
+                                        //         .accept_server_txids
+                                        //     {
+                                        //         // now we reconfigure the tx_map to align with the server
+                                        //         // switch the TransactionRecord to the new txid
+                                        //         if let Some(transaction_record) =
+                                        //             tx_map.transaction_records_by_id.remove(&txid)
+                                        //         {
+                                        //             tx_map
+                                        //                 .transaction_records_by_id
+                                        //                 .insert(reported_txid, transaction_record);
+                                        //         }
+                                        //         txid = reported_txid;
+                                        //     }
+                                        // };
                                     }
                                     Err(e) => {
                                         println!("server returned invalid txid {}", e);
