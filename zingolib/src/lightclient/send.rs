@@ -218,8 +218,9 @@ pub mod send_with_proposal {
             let mut txids = vec![];
             for (txid, raw_tx) in calculated_tx_cache {
                 let mut spend_status = None;
-                let mut option_transaction_record = tx_map.transaction_records_by_id.get_mut(&txid);
-                if let Some(&mut ref mut transaction_record) = option_transaction_record {
+                if let Some(&mut ref mut transaction_record) =
+                    tx_map.transaction_records_by_id.get_mut(&txid)
+                {
                     // only send the txid if its status is Calculated. when we do, change its status to Transmitted.
                     if matches!(transaction_record.status, ConfirmationStatus::Calculated(_)) {
                         match crate::grpc_connector::send_transaction(
@@ -256,9 +257,7 @@ pub mod send_with_proposal {
                                                 // now we reconfigure the tx_map to align with the server
                                                 // switch the TransactionRecord to the new txid
                                                 chosen_txid = reported_txid;
-                                                drop(&mut *transaction_record);
-                                                drop(option_transaction_record);
-                                                if let Some(mut transaction_record) =
+                                                if let Some(transaction_record) =
                                                     tx_map.transaction_records_by_id.remove(&txid)
                                                 {
                                                     tx_map
