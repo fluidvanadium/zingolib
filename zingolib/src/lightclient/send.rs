@@ -239,8 +239,9 @@ pub mod send_with_proposal {
                                     serverz_txid_string.as_str(),
                                 ) {
                                     Ok(reported_txid) => {
+                                        #[cfg(feature = "darkside_tests")]
+                                        // happens during darkside tests
                                         if txid != reported_txid {
-                                            // happens during darkside tests
                                             println!(
                                                 "served txid {} does not match calulated txid {}",
                                                 reported_txid, txid,
