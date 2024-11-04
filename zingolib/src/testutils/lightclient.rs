@@ -98,10 +98,10 @@ pub mod from_inputs {
 }
 
 /// gets stati for a vec of txids
-pub async fn lookup_stati(
+pub async fn lookup_statuses(
     client: &LightClient,
     txids: nonempty::NonEmpty<TxId>,
-) -> nonempty::NonEmpty<zingo_status::confirmation_status::ConfirmationStatus> {
+) -> nonempty::NonEmpty<Option<zingo_status::confirmation_status::ConfirmationStatus>> {
     let records = &client
         .wallet
         .transaction_context
@@ -110,7 +110,11 @@ pub async fn lookup_stati(
         .await
         .transaction_records_by_id;
 
-    txids.map(|txid| records[&txid].status)
+    txids.map(|txid| {
+        records
+            .get(&txid)
+            .map(|transaction_record| transaction_record.status)
+    })
 }
 
 /// gets stati for a vec of txids

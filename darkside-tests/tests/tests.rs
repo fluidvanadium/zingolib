@@ -248,10 +248,16 @@ async fn evicted_transaction_is_rebroadcast() {
     .as_ref()
     .expect("record must exist");
 
-    zingolib::testutils::lightclient::lookup_stati(&primary, txids.clone())
+    zingolib::testutils::lightclient::lookup_statuses(&primary, txids.clone())
         .await
         .map(|status| {
-            assert!(matches!(status, ConfirmationStatus::Transmitted(_)));
+            assert!(matches!(status, Some(ConfirmationStatus::Transmitted(_))));
+        });
+
+    zingolib::testutils::lightclient::lookup_statuses(&secondary, txids.clone())
+        .await
+        .map(|status| {
+            assert!(matches!(status, None));
         });
     // environment.bump_chain().await;
 }

@@ -1,6 +1,6 @@
 //! lightclient functions with added assertions. used for tests.
 
-use crate::{lightclient::LightClient, testutils::lightclient::lookup_stati as lookup_statuses};
+use crate::{lightclient::LightClient, testutils::lightclient::lookup_statuses};
 use zcash_client_backend::PoolType;
 
 use crate::testutils::{
@@ -71,7 +71,10 @@ where
         .expect("record is ok");
 
     lookup_statuses(sender, txids.clone()).await.map(|status| {
-        assert_eq!(status, ConfirmationStatus::Transmitted(send_height.into()));
+        assert_eq!(
+            status,
+            Some(ConfirmationStatus::Transmitted(send_height.into()))
+        );
     });
 
     let send_ua_id = sender.do_addresses().await[0]["address"].clone();
@@ -92,7 +95,7 @@ where
             .expect("record to be ok");
 
         lookup_statuses(sender, txids.clone()).await.map(|status| {
-            assert!(matches!(status, ConfirmationStatus::Mempool(_)));
+            assert!(matches!(status, Some(ConfirmationStatus::Mempool(_))));
         });
 
         // TODO: distribute receivers
@@ -128,7 +131,7 @@ where
         .expect("record to be ok");
 
     lookup_statuses(sender, txids.clone()).await.map(|status| {
-        assert!(matches!(status, ConfirmationStatus::Confirmed(_)));
+        assert!(matches!(status, Some(ConfirmationStatus::Confirmed(_))));
     });
 
     for (recipient, _, _, _) in sends {
@@ -175,7 +178,10 @@ where
         .expect("record is ok");
 
     lookup_statuses(client, txids.clone()).await.map(|status| {
-        assert_eq!(status, ConfirmationStatus::Transmitted(send_height.into()));
+        assert_eq!(
+            status,
+            Some(ConfirmationStatus::Transmitted(send_height.into()))
+        );
     });
 
     if test_mempool {
@@ -189,7 +195,7 @@ where
             .expect("record is ok");
 
         lookup_statuses(client, txids.clone()).await.map(|status| {
-            assert!(matches!(status, ConfirmationStatus::Mempool(_)));
+            assert!(matches!(status, Some(ConfirmationStatus::Mempool(_))));
         });
     }
 
@@ -204,7 +210,7 @@ where
         .expect("record is ok");
 
     lookup_statuses(client, txids.clone()).await.map(|status| {
-        assert!(matches!(status, ConfirmationStatus::Confirmed(_)));
+        assert!(matches!(status, Some(ConfirmationStatus::Confirmed(_))));
     });
 
     recorded_fee
