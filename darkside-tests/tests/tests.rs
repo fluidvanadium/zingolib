@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use darkside_tests::darkside_connector::DarksideConnector;
 use darkside_tests::utils::prepare_darksidewalletd;
 use darkside_tests::utils::scenarios::DarksideEnvironment;
 use darkside_tests::utils::update_tree_states_for_transaction;
-use darkside_tests::utils::DarksideConnector;
 use darkside_tests::utils::DarksideHandler;
 use tokio::time::sleep;
 use zcash_client_backend::PoolType::Shielded;
