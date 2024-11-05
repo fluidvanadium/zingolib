@@ -24,9 +24,7 @@ use zingolib::wallet::traits::DomainWalletExt;
 use crate::{
     constants::BRANCH_ID,
     darkside_connector::DarksideConnector,
-    darkside_types::{
-        self, Empty,
-    },
+    darkside_types::{self, Empty},
 };
 
 use super::{
