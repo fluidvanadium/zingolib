@@ -254,7 +254,7 @@ async fn evicted_transaction_is_rebroadcast() {
     );
 
     let recorded_fee = *zingolib::testutils::assertions::lookup_fees_with_proposal_check(
-        &primary, &proposal, &txids,
+        &primary, &proposal, txids,
     )
     .await
     .first()
@@ -274,7 +274,7 @@ async fn evicted_transaction_is_rebroadcast() {
     zingolib::testutils::lightclient::lookup_statuses(&secondary, txids.clone())
         .await
         .map(|status| {
-            assert!(matches!(status, None));
+            assert!(status.is_none());
         });
 
     environment
@@ -296,7 +296,7 @@ async fn evicted_transaction_is_rebroadcast() {
     zingolib::testutils::lightclient::lookup_statuses(&secondary, txids.clone())
         .await
         .map(|status| {
-            assert!(matches!(status, None));
+            assert!(status.is_none());
         });
 
     send_height = primary

@@ -1,5 +1,4 @@
 use http::Uri;
-use hyper_util::client::legacy::connect::HttpConnector;
 use orchard::{note_encryption::OrchardDomain, tree::MerkleHashOrchard};
 use sapling_crypto::note_encryption::SaplingDomain;
 use std::{
@@ -8,15 +7,12 @@ use std::{
     io::{self, BufRead, Write},
     path::{Path, PathBuf},
     process::{Child, Command},
-    sync::Arc,
     time::Duration,
 };
 use tempdir;
 use tokio::time::sleep;
-use tower::ServiceExt;
 use zcash_primitives::consensus::BranchId;
 use zcash_primitives::{merkle_tree::read_commitment_tree, transaction::Transaction};
-use zingo_netutils::UnderlyingService;
 use zingolib::testutils::{
     incrementalmerkletree::frontier::CommitmentTree,
     paths::{get_bin_dir, get_cargo_manifest_dir},
@@ -29,8 +25,7 @@ use crate::{
     constants::BRANCH_ID,
     darkside_connector::DarksideConnector,
     darkside_types::{
-        self, darkside_streamer_client::DarksideStreamerClient, DarksideBlock, DarksideBlocksUrl,
-        DarksideEmptyBlocks, DarksideHeight, DarksideMetaState, Empty,
+        self, Empty,
     },
 };
 
