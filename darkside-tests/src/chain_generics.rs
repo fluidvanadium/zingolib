@@ -45,8 +45,11 @@ pub(crate) mod conduct_chain {
 
     use crate::constants::ABANDON_TO_DARKSIDE_SAP_10_000_000_ZAT;
     use crate::constants::DARKSIDE_SEED;
+    use crate::darkside_types::TreeState;
     use crate::utils::scenarios::DarksideEnvironment;
     use crate::utils::update_tree_states_for_transaction;
+
+    /// doesnt use the full extent of DarksideEnvironment, preferring to rely on server truths when ever possible.
     impl ConductChain for DarksideEnvironment {
         async fn setup() -> Self {
             DarksideEnvironment::new(None).await
@@ -75,6 +78,9 @@ pub(crate) mod conduct_chain {
         }
 
         async fn bump_chain(&mut self) {
+            // increase chain height
+            self.staged_blockheight = self.staged_blockheight + 1;
+
             let mut streamed_raw_txns = self
                 .darkside_connector
                 .get_incoming_transactions()
@@ -84,16 +90,19 @@ pub(crate) mod conduct_chain {
                 .clear_incoming_transactions()
                 .await
                 .unwrap();
+
             self.darkside_connector
                 .stage_blocks_create(u64::from(self.staged_blockheight) as i32, 1, 0)
                 .await
                 .unwrap();
-            self.staged_blockheight = self.staged_blockheight + 1;
+
             loop {
                 let maybe_raw_tx = streamed_raw_txns.message().await.unwrap();
                 match maybe_raw_tx {
                     None => break,
                     Some(raw_tx) => {
+                        // increase chain height
+                        self.staged_blockheight = self.staged_blockheight + 1;
                         self.darkside_connector
                             .stage_transactions_stream(vec![(
                                 raw_tx.data.clone(),
@@ -107,12 +116,9 @@ pub(crate) mod conduct_chain {
                             u64::from(self.staged_blockheight),
                         )
                         .await;
-                        self.darkside_connector
-                            .add_tree_state(self.tree_state.clone())
-                            .await
-                            .unwrap();
                     }
                 }
+                break;
             }
             self.apply_blocks(u64::from(self.staged_blockheight)).await;
         }
