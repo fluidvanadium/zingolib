@@ -39,20 +39,44 @@ pub(crate) mod conduct_chain {
     //!   - txids are regenerated randomly. zingo can optionally accept_server_txid
     //!   - these tests cannot portray the full range of network weather.
 
+    use zingolib::config::RegtestNetwork;
     use zingolib::lightclient::LightClient;
     use zingolib::testutils::chain_generics::conduct_chain::ConductChain;
+    use zingolib::testutils::scenarios::setup::ClientBuilder;
     use zingolib::wallet::WalletBase;
 
     use crate::constants::ABANDON_TO_DARKSIDE_SAP_10_000_000_ZAT;
     use crate::constants::DARKSIDE_SEED;
+    use crate::darkside_connector::DarksideConnector;
     use crate::darkside_types::TreeState;
     use crate::utils::scenarios::DarksideEnvironment;
     use crate::utils::update_tree_states_for_transaction;
+    use crate::utils::DarksideHandler;
+
+    pub struct SimpleDarksideEnvironment {
+        darkside_handler: DarksideHandler,
+        darkside_connector: DarksideConnector,
+        client_builder: ClientBuilder,
+        regtest_network: RegtestNetwork,
+    }
 
     /// doesnt use the full extent of DarksideEnvironment, preferring to rely on server truths when ever possible.
-    impl ConductChain for DarksideEnvironment {
+    impl ConductChain for SimpleDarksideEnvironment {
         async fn setup() -> Self {
-            DarksideEnvironment::new(None).await
+            let (darkside_handler, darkside_connector) =
+                crate::utils::init_darksidewalletd(None).await.unwrap();
+            let client_builder = ClientBuilder::new(
+                darkside_connector.0.clone(),
+                darkside_handler.darkside_dir.clone(),
+            );
+
+            let regtest_network = RegtestNetwork::all_upgrades_active();
+            SimpleDarksideEnvironment {
+                darkside_handler,
+                darkside_connector,
+                client_builder,
+                regtest_network,
+            }
         }
 
         async fn create_faucet(&mut self) -> LightClient {
