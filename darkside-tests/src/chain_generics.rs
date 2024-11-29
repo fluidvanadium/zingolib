@@ -78,8 +78,13 @@ pub(crate) mod conduct_chain {
         }
 
         async fn bump_chain(&mut self) {
-            // increase chain height
-            self.staged_blockheight = self.staged_blockheight + 1;
+            let height_before =
+                zingolib::grpc_connector::get_latest_block(self.client_builder.server_id.clone())
+                    .await
+                    .unwrap()
+                    .height;
+
+            let blocks_to_add = 1;
 
             let mut streamed_raw_txns = self
                 .darkside_connector
@@ -91,8 +96,28 @@ pub(crate) mod conduct_chain {
                 .await
                 .unwrap();
 
+            // trees
+            let trees = zingolib::grpc_connector::get_trees(
+                self.client_builder.server_id.clone(),
+                height_before,
+            )
+            .await
+            .unwrap();
+            let mut sapling_tree: sapling_crypto::CommitmentTree = read_commitment_tree(
+                hex::decode(SaplingDomain::get_tree(&trees))
+                    .unwrap()
+                    .as_slice(),
+            )
+            .unwrap();
+            let mut orchard_tree: CommitmentTree<MerkleHashOrchard, 32> = read_commitment_tree(
+                hex::decode(OrchardDomain::get_tree(&trees))
+                    .unwrap()
+                    .as_slice(),
+            )
+            .unwrap();
+
             self.darkside_connector
-                .stage_blocks_create(u64::from(self.staged_blockheight) as i32, 1, 0)
+                .stage_blocks_create(height_before as i32 + 1, blocks_to_add - 1, 0)
                 .await
                 .unwrap();
 
@@ -102,7 +127,6 @@ pub(crate) mod conduct_chain {
                     None => break,
                     Some(raw_tx) => {
                         // increase chain height
-                        self.staged_blockheight = self.staged_blockheight + 1;
                         self.darkside_connector
                             .stage_transactions_stream(vec![(
                                 raw_tx.data.clone(),
@@ -110,21 +134,65 @@ pub(crate) mod conduct_chain {
                             )])
                             .await
                             .unwrap();
-                        self.tree_state = update_tree_states_for_transaction(
-                            &self.darkside_connector.0,
-                            raw_tx.clone(),
-                            u64::from(self.staged_blockheight),
+
+                        //trees
+                        let transaction = zcash_primitives::transaction::Transaction::read(
+                            raw_tx.data.as_slice(),
+                            zcash_primitives::consensus::BranchId::Nu5,
                         )
-                        .await;
+                        .unwrap();
+                        for output in transaction
+                            .sapling_bundle()
+                            .iter()
+                            .flat_map(|bundle| bundle.shielded_outputs())
+                        {
+                            sapling_tree
+                                .append(sapling_crypto::Node::from_cmu(output.cmu()))
+                                .unwrap()
+                        }
+                        for action in transaction
+                            .orchard_bundle()
+                            .iter()
+                            .flat_map(|bundle| bundle.actions())
+                        {
+                            orchard_tree
+                                .append(MerkleHashOrchard::from_cmx(action.cmx()))
+                                .unwrap()
+                        }
                     }
                 }
-                break;
             }
-            self.apply_blocks(u64::from(self.staged_blockheight)).await;
-        }
 
-        fn get_chain_height(&mut self) -> u32 {
-            self.staged_blockheight.into()
+            //trees
+            let mut sapling_tree_bytes = vec![];
+            zcash_primitives::merkle_tree::write_commitment_tree(
+                &sapling_tree,
+                &mut sapling_tree_bytes,
+            )
+            .unwrap();
+            let mut orchard_tree_bytes = vec![];
+            zcash_primitives::merkle_tree::write_commitment_tree(
+                &orchard_tree,
+                &mut orchard_tree_bytes,
+            )
+            .unwrap();
+            let new_tree_state = TreeState {
+                height,
+                sapling_tree: hex::encode(sapling_tree_bytes),
+                orchard_tree: hex::encode(orchard_tree_bytes),
+                network: constants::first_tree_state().network,
+                hash: "".to_string(),
+                time: 0,
+            };
+            self.darkside_connector
+                .add_tree_state(new_tree_state)
+                .await
+                .unwrap();
+
+            self.darkside_connector
+                .apply_staged(height_before as i32 + blocks_to_add)
+                .await
+                .unwrap();
         }
     }
 }
