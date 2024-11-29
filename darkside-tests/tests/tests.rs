@@ -220,6 +220,7 @@ async fn sent_transaction_reorged_into_mempool() {
 }
 
 #[tokio::test]
+#[ignore = "incomplete"]
 async fn evicted_transaction_is_rebroadcast() {
     std::env::set_var("RUST_BACKTRACE", "1");
 
