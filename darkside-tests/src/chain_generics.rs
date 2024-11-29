@@ -39,6 +39,7 @@ pub(crate) mod conduct_chain {
     //!   - txids are regenerated randomly. zingo can optionally accept_server_txid
     //!   - these tests cannot portray the full range of network weather.
 
+    use orchard::tree::MerkleHashOrchard;
     use zingolib::lightclient::LightClient;
     use zingolib::testutils::chain_generics::conduct_chain::ConductChain;
     use zingolib::wallet::WalletBase;
@@ -52,7 +53,13 @@ pub(crate) mod conduct_chain {
     /// doesnt use the full extent of DarksideEnvironment, preferring to rely on server truths when ever possible.
     impl ConductChain for DarksideEnvironment {
         async fn setup() -> Self {
-            DarksideEnvironment::new(None).await
+            let elf = DarksideEnvironment::new(None).await;
+            elf.darkside_connector
+                .stage_blocks_create(1, 1, 0)
+                .await
+                .unwrap();
+            elf.darkside_connector.apply_staged(1).await.unwrap();
+            elf
         }
 
         async fn create_faucet(&mut self) -> LightClient {
@@ -103,14 +110,16 @@ pub(crate) mod conduct_chain {
             )
             .await
             .unwrap();
-            let mut sapling_tree: sapling_crypto::CommitmentTree = read_commitment_tree(
-                hex::decode(SaplingDomain::get_tree(&trees))
-                    .unwrap()
-                    .as_slice(),
+            let mut sapling_tree: sapling_crypto::CommitmentTree = zcash_primitives::merkle_tree::read_commitment_tree(
+                hex::decode(<sapling_crypto::note_encryption::SaplingDomain as zingolib::wallet::traits::DomainWalletExt>::get_tree(
+                    &trees,
+                ))
+                .unwrap()
+                .as_slice(),
             )
             .unwrap();
-            let mut orchard_tree: CommitmentTree<MerkleHashOrchard, 32> = read_commitment_tree(
-                hex::decode(OrchardDomain::get_tree(&trees))
+            let mut orchard_tree: zingolib::testutils::incrementalmerkletree::frontier::CommitmentTree<MerkleHashOrchard, 32> = zcash_primitives::merkle_tree::read_commitment_tree(
+                hex::decode(<orchard::note_encryption::OrchardDomain as zingolib::wallet::traits::DomainWalletExt>::get_tree(&trees))
                     .unwrap()
                     .as_slice(),
             )
@@ -163,6 +172,8 @@ pub(crate) mod conduct_chain {
                 }
             }
 
+            let new_height = height_before + 1;
+
             //trees
             let mut sapling_tree_bytes = vec![];
             zcash_primitives::merkle_tree::write_commitment_tree(
@@ -177,10 +188,10 @@ pub(crate) mod conduct_chain {
             )
             .unwrap();
             let new_tree_state = TreeState {
-                height,
+                height: new_height,
                 sapling_tree: hex::encode(sapling_tree_bytes),
                 orchard_tree: hex::encode(orchard_tree_bytes),
-                network: constants::first_tree_state().network,
+                network: crate::constants::first_tree_state().network,
                 hash: "".to_string(),
                 time: 0,
             };
