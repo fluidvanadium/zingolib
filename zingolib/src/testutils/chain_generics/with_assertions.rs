@@ -15,13 +15,13 @@ use zingo_status::confirmation_status::ConfirmationStatus;
 /// this function handles inputs and their lifetimes to create a proposal
 pub async fn to_clients_proposal(
     sender: &LightClient,
-    sends: &Vec<(&LightClient, PoolType, u64, Option<&str>)>,
+    sends: &[(&LightClient, PoolType, u64, Option<&str>)],
 ) -> zcash_client_backend::proposal::Proposal<
     zcash_primitives::transaction::fees::zip317::FeeRule,
     zcash_client_backend::wallet::NoteId,
 > {
     let mut subraw_receivers = vec![];
-    for (recipient, pooltype, amount, memo_str) in sends.clone() {
+    for (recipient, pooltype, amount, memo_str) in sends.iter().copied() {
         let address = get_base_address(recipient, pooltype).await;
         subraw_receivers.push((address, amount, memo_str));
     }
@@ -76,20 +76,19 @@ where
         .as_ref()
         .expect("record is ok");
 
-    dbg!(
-        crate::grpc_connector::get_latest_block(
-            sender.config.lightwalletd_uri.read().unwrap().to_owned()
-        )
-        .await
-        .unwrap()
-        .height
-    );
-
-    lookup_statuses(sender, txids.clone()).await.map(|status| {
-        assert_eq!(
-            status,
-            Some(ConfirmationStatus::Transmitted(send_height.into()))
+    /* The following debug causes a clippy error:
+    https://rust-lang.github.io/rust-clippy/master/index.html#await_holding_lock
+        dbg!(
+            crate::grpc_connector::get_latest_block(
+                sender.config.lightwalletd_uri.read().unwrap().to_owned()
+            )
+            .await
+            .unwrap()
+            .height
         );
+    */
+    lookup_statuses(sender, txids.clone()).await.map(|status| {
+        assert_eq!(status, Some(ConfirmationStatus::Transmitted(send_height)));
     });
 
     let send_ua_id = sender.do_addresses().await[0]["address"].clone();
@@ -194,10 +193,7 @@ where
         .expect("record is ok");
 
     lookup_statuses(client, txids.clone()).await.map(|status| {
-        assert_eq!(
-            status,
-            Some(ConfirmationStatus::Transmitted(send_height.into()))
-        );
+        assert_eq!(status, Some(ConfirmationStatus::Transmitted(send_height)));
     });
 
     if test_mempool {

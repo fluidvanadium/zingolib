@@ -379,6 +379,10 @@ mod chain_generics {
                     target
                 );
             }
+
+            fn lightserver_uri(&self) -> Option<http::Uri> {
+                todo!()
+            }
         }
     }
 }
