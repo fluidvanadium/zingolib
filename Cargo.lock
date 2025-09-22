@@ -9165,7 +9165,7 @@ dependencies = [
 [[package]]
 name = "zingo-infra-services"
 version = "0.1.0"
-source = "git+https://github.com/zingolabs/infrastructure.git?tag=zingo-infra-services-0.3.0#d1540464571f7d14bfed7997c4cf144d6b52e923"
+source = "git+https://github.com/zingolabs/infrastructure.git?rev=fa8acf3361441912e0467c71bfc54efe4d733d15#fa8acf3361441912e0467c71bfc54efe4d733d15"
 dependencies = [
  "getset",
  "hex",
