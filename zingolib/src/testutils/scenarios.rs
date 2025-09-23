@@ -28,10 +28,11 @@ use testvectors::{
     REG_Z_ADDR_FROM_ABANDONART, seeds,
 };
 use zebra_chain::parameters::NetworkKind;
+use zebra_chain::parameters::testnet::ConfiguredActivationHeights as ActivationHeights;
 use zingo_infra_services::indexer::{
     Indexer, Lightwalletd, LightwalletdConfig, Zainod, ZainodConfig,
 };
-use zingo_infra_services::network::{ActivationHeights, localhost_uri};
+use zingo_infra_services::network::localhost_uri;
 use zingo_infra_services::utils::ExecutableLocation;
 use zingo_infra_services::validator::{Validator, Zcashd, ZcashdConfig, Zebrad, ZebradConfig};
 use zingo_infra_services::{LocalNet, Process};
