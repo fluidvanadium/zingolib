@@ -274,23 +274,23 @@ fn get_test_binary_path(binary_name: &str) -> ExecutableLocation {
     }
 }
 
-/// Zcashd binary location. First checks test_binaries/bins, then $PATH if not found.
+/// Zcashd binary location. First checks `test_binaries/bins`, then $PATH if not found.
 pub static ZCASHD_BIN: LazyLock<ExecutableLocation> =
     LazyLock::new(|| get_test_binary_path("zcashd"));
 
-/// Zcash CLI binary location. First checks test_binaries/bins, then $PATH if not found.
+/// Zcash CLI binary location. First checks `test_binaries/bins`, then $PATH if not found.
 pub static ZCASH_CLI_BIN: LazyLock<ExecutableLocation> =
     LazyLock::new(|| get_test_binary_path("zcash-cli"));
 
-/// Zebrad binary location. First checks test_binaries/bins, then $PATH if not found.
+/// Zebrad binary location. First checks `test_binaries/bins`, then $PATH if not found.
 pub static ZEBRAD_BIN: LazyLock<ExecutableLocation> =
     LazyLock::new(|| get_test_binary_path("zebrad"));
 
-/// Lightwalletd binary location. First checks test_binaries/bins, then $PATH if not found.
+/// Lightwalletd binary location. First checks `test_binaries/bins`, then $PATH if not found.
 pub static LIGHTWALLETD_BIN: LazyLock<ExecutableLocation> =
     LazyLock::new(|| get_test_binary_path("lightwalletd"));
 
-/// Zainod binary location. First checks test_binaries/bins, then $PATH if not found.
+/// Zainod binary location. First checks `test_binaries/bins`, then $PATH if not found.
 pub static ZAINOD_BIN: LazyLock<ExecutableLocation> =
     LazyLock::new(|| get_test_binary_path("zainod"));
 
@@ -318,8 +318,8 @@ impl ClientBuilder {
         &mut self,
         configured_activation_heights: testnet::ConfiguredActivationHeights,
     ) -> ZingoConfig {
-        //! Each client requires a unique data_dir, we use the
-        //! client_number counter for this.
+        //! Each client requires a unique `data_dir`, we use the
+        //! `client_number` counter for this.
         self.client_number += 1;
         let conf_path = format!(
             "{}_client_{}",
